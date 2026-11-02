@@ -1,4 +1,4 @@
-# facade-api-backend-lis
+# lis-facade-api-backend
 
 Core delivery C# ASP.NET backend template.
 
@@ -77,8 +77,22 @@ dotnet test
 
 Run CDP-Deployments application:
 ```bash
-dotnet run --project FacadeApiBackendLis --launch-profile Development
+dotnet run --project LisFacadeApiBackend --launch-profile Development
 ```
+
+### API documentation
+
+The OpenAPI specification is generated from the endpoints and served at:
+
+```
+/openapi/v1.json
+```
+
+For a local run with the `Development` launch profile, this is `http://localhost:8085/openapi/v1.json`.
+
+Swagger UI for the same specification is served at `http://localhost:8085/swagger`.
+
+The `/example` endpoints are excluded from the specification.
 
 ### SonarCloud
 
