@@ -1,0 +1,2068 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "LIS Cattle API",
+    "description": "API for cattle holdings, registrations and submission processing.",
+    "version": "1.0"
+  },
+  "paths": {
+    "/v1/cattle/{earTag}": {
+      "get": {
+        "tags": [
+          "Cattle"
+        ],
+        "summary": "Get the cattle details",
+        "description": "Retrieves the details of the cattle for the given county, parish and holding number",
+        "operationId": "GetCattleDetails",
+        "parameters": [
+          {
+            "name": "earTag",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CattleDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Search holdings.",
+        "description": "Retrieves a paginated list of holding details from keeper data matching the search, sorting and paging criteria.",
+        "operationId": "SearchHoldings",
+        "parameters": [
+          {
+            "name": "Search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Order",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponseOfHoldingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings/{county}/{parish}/{holding}": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Get the holding details",
+        "description": "Retrieves the details of the holding for the given county, parish and holding number",
+        "operationId": "GetHolding",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parish",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "holding",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingDetailedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings/{county}/{parish}/{holding}/cattle": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Get the cattle on the holding.",
+        "description": "Retrieves the cattle for the given county, parish and holding number.",
+        "operationId": "GetCattleForHoldingMultiSegment",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parish",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "holding",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EarTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Breed",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CattleResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings/{cph}/cattle": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Get the cattle on the holding.",
+        "description": "Retrieves the cattle for the given CPH number.",
+        "operationId": "GetCattleForHolding",
+        "parameters": [
+          {
+            "name": "cph",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "EarTag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Breed",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sex",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CattleResponse"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings/{county}/{parish}/{holding}/bundles": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Get the bundles for the holding.",
+        "description": "Retrieves the list of bundles for the given county, parish and holding number in the route.",
+        "operationId": "GetBundlesForHoldingMultiSegment",
+        "parameters": [
+          {
+            "name": "county",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parish",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "holding",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BundleResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/holdings/{cph}/bundles": {
+      "get": {
+        "tags": [
+          "Holdings"
+        ],
+        "summary": "Get the bundles for the holding.",
+        "description": "Retrieves the registration bundles for the given CPH number.",
+        "operationId": "GetBundlesForHolding",
+        "parameters": [
+          {
+            "name": "cph",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BundleResponse"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/registrations": {
+      "post": {
+        "tags": [
+          "Registrations"
+        ],
+        "summary": "Create a cattle registration bundle.",
+        "description": "Creates a bundle of cattle registrations for asynchronous validation and processing.",
+        "operationId": "CreateRegistrationBundle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationBundleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BundleResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/registrations/{id}/validate": {
+      "post": {
+        "tags": [
+          "Registrations"
+        ],
+        "summary": "Validate a cattle registration bundle.",
+        "description": "Validates the cattle registration bundle identified by its unique ID.",
+        "operationId": "ValidateRegistrationBundle",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionValidationResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/users/{subject}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get a user's details and associated CPHs",
+        "description": "Retrieves a user's details and the CPHs they are associated with from the keeper data service, by identity provider subject. The associations are those captured when the user last signed in.",
+        "operationId": "GetUserDetails",
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/v1/users": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Create or refresh a user account",
+        "description": "Ensures a user account exists in the keeper data service for the supplied identity provider claims (sub, email, given_name, family_name) and returns the user's details and associated CPHs. An existing account (matched by subject, or by an email with no subject yet) is refreshed; otherwise one is created. Returns 409 when the email belongs to a different account and 503 when the keeper data service is temporarily unavailable.",
+        "operationId": "CreateUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/CreateUserRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetailsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
+    "/health/detailed": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Get detailed health status",
+        "description": "Performs and returns a detailed health check report for all downstream dependencies including database, queue, and background jobs.",
+        "operationId": "GetDetailedHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnimalRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "earTag": {
+            "type": "string",
+            "description": "The unique ear tag identifier of the animal."
+          },
+          "dateOfBirth": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date of birth of the animal.",
+            "format": "date"
+          },
+          "sex": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sex of the animal."
+          },
+          "breed": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed code or name of the animal."
+          },
+          "dam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The dam details for the animal registration.",
+                "$ref": "#/components/schemas/DamRegistrationRequest"
+              }
+            ]
+          },
+          "sire": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The sire details for the animal registration.",
+                "$ref": "#/components/schemas/SireRegistrationRequest"
+              }
+            ]
+          }
+        }
+      },
+      "BundleAnimalErrorResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the animal error.",
+            "format": "uuid"
+          },
+          "animalId": {
+            "type": "string",
+            "description": "The unique identifier of the animal.",
+            "format": "uuid"
+          },
+          "errorCode": {
+            "type": "string",
+            "description": "The error code."
+          },
+          "errorText": {
+            "type": "string",
+            "description": "The error text."
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date and time when the animal error was created.",
+            "format": "date-time"
+          }
+        }
+      },
+      "BundleAnimalResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the animal.",
+            "format": "uuid"
+          },
+          "submissionId": {
+            "type": "string",
+            "description": "The unique identifier of the submission.",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "description": "The status of the animal."
+          },
+          "earTag": {
+            "type": "string",
+            "description": "The ear tag of the animal."
+          },
+          "dateBirth": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date of birth of the animal.",
+            "format": "date"
+          },
+          "sex": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sex of the animal."
+          },
+          "breed": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed of the animal."
+          },
+          "damType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The dam type."
+          },
+          "damGeneticEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The genetic dam ear tag."
+          },
+          "damSurrogateEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The surrogate dam ear tag."
+          },
+          "sireEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sire ear tag."
+          },
+          "sireName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sire name."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleAnimalErrorResponse"
+            },
+            "description": "The list of errors for the animal."
+          }
+        }
+      },
+      "BundleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the bundle.",
+            "format": "uuid"
+          },
+          "clientReference": {
+            "type": "string",
+            "description": "The client reference for the bundle."
+          },
+          "countyParishHolding": {
+            "type": "string",
+            "description": "The county, parish and holding (CPH) number."
+          },
+          "submittedBy": {
+            "type": "string",
+            "description": "The user or system that submitted the bundle."
+          },
+          "status": {
+            "type": "string",
+            "description": "The status of the bundle."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "The date and time when the bundle was created.",
+            "format": "date-time"
+          },
+          "animals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleAnimalResponse"
+            },
+            "description": "The list of animals in the bundle."
+          }
+        }
+      },
+      "CattleDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "earTag": {
+            "type": "string",
+            "description": "The ear tag of the animal."
+          },
+          "species": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The species of the animal."
+          },
+          "sex": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sex of the animal."
+          },
+          "dateBirth": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date of birth of the animal.",
+            "format": "date"
+          },
+          "dateRegistered": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The registration date of the animal.",
+            "format": "date"
+          },
+          "dateOnCph": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date the animal arrived on the holding.",
+            "format": "date"
+          },
+          "currentLocation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The current location of the animal.",
+                "$ref": "#/components/schemas/CattleLocationResponse"
+              }
+            ]
+          },
+          "registeredLocation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The registered location of the animal.",
+                "$ref": "#/components/schemas/CattleLocationResponse"
+              }
+            ]
+          },
+          "deathLocation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The death location of the animal.",
+                "$ref": "#/components/schemas/CattleLocationResponse"
+              }
+            ]
+          },
+          "breed": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed of the animal."
+          },
+          "breedCode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed code of the animal."
+          },
+          "breedName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed name of the animal."
+          },
+          "state": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The animal's state, for example Alive or Dead."
+          },
+          "restrictionStatus": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The animal's restriction status, for example None or Restricted."
+          },
+          "damType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The kind of dam recorded: surrogate or genetic."
+          },
+          "geneticDamEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the genetic dam."
+          },
+          "surrogateDamEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the surrogate dam."
+          },
+          "sireEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the sire."
+          },
+          "sireName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the sire; currently always null because CADS does not carry it."
+          }
+        }
+      },
+      "CattleErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errorCode": {
+            "type": "string",
+            "description": "The error code."
+          },
+          "errorText": {
+            "type": "string",
+            "description": "The error text."
+          }
+        }
+      },
+      "CattleLocationResponse": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The location identifier."
+          },
+          "subIdentifier": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sub-identifier of the location."
+          },
+          "fullIdentifier": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The full identifier of the location."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the location."
+          },
+          "premisesType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The premises type of the location."
+          }
+        }
+      },
+      "CattleResponse": {
+        "type": "object",
+        "properties": {
+          "earTag": {
+            "type": "string",
+            "description": "The ear tag of the animal."
+          },
+          "dateBirth": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date of birth of the animal.",
+            "format": "date"
+          },
+          "dateOnCph": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date the animal arrived on the holding.",
+            "format": "date"
+          },
+          "sex": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sex of the animal."
+          },
+          "breed": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed of the animal."
+          },
+          "breedCode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed code of the animal."
+          },
+          "breedName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The breed name of the animal."
+          },
+          "status": {
+            "type": "string",
+            "description": "The status of the animal."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CattleErrorResponse"
+            },
+            "description": "The list of errors for the animal."
+          }
+        }
+      },
+      "ComponentHealthResult": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "The component health status (e.g. Healthy, Degraded, Unhealthy)."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The description or details regarding the component check outcome."
+          },
+          "durationSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The duration taken to check this component, in seconds.",
+            "format": "double",
+            "default": 0
+          },
+          "data": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "description": "Additional metadata properties associated with the component health check."
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "properties": {
+          "sub": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identity provider subject claim."
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The email address claim."
+          },
+          "given_name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The given name claim."
+          },
+          "family_name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The family name claim."
+          }
+        }
+      },
+      "DamRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The dam type (e.g., genetic or surrogate)."
+          },
+          "geneticDamEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the genetic dam."
+          },
+          "surrogateDamEarTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the surrogate dam."
+          }
+        }
+      },
+      "HealthCheckResponse": {
+        "required": [
+          "status",
+          "totalDurationSeconds",
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "The overall health status of the application (e.g. Healthy, Degraded, Unhealthy)."
+          },
+          "totalDurationSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The total duration taken to execute all health checks, in seconds.",
+            "format": "double"
+          },
+          "entries": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ComponentHealthResult"
+            },
+            "description": "The dictionary of individual component health check results keyed by component name."
+          }
+        }
+      },
+      "HoldingAssociationResponse": {
+        "type": "object",
+        "properties": {
+          "customerNumber": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The customer number of the associated party."
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The title of the associated person."
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The first name of the associated person."
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The last name of the associated person."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the associated person or organization."
+          },
+          "partyType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The party type."
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The email address of the associated party."
+          },
+          "mobile": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The mobile phone number of the associated party."
+          },
+          "telephone": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The telephone number of the associated party."
+          },
+          "address": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The address of the associated party."
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldingRoleResponse"
+            },
+            "description": "The roles associated with the person or organization on the holding."
+          }
+        }
+      },
+      "HoldingDetailedResponse": {
+        "type": "object",
+        "properties": {
+          "herdMarks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldingMarkResponse"
+            },
+            "description": "The list of herd marks for the holding."
+          },
+          "allowedSpecies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The list of allowed species for the holding."
+          },
+          "associations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldingAssociationResponse"
+            },
+            "description": "The list of associations for the holding."
+          },
+          "cph": {
+            "type": "string",
+            "description": "The county, parish and holding (CPH) number."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the holding."
+          },
+          "holdingType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The type of the holding."
+          },
+          "address": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The address of the holding."
+          },
+          "keeperName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the keeper."
+          }
+        }
+      },
+      "HoldingMarkResponse": {
+        "type": "object",
+        "properties": {
+          "mark": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The mark identifier."
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The start date from which the mark is valid.",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The end date until which the mark is valid.",
+            "format": "date-time"
+          },
+          "species": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The species associated with the mark."
+          }
+        }
+      },
+      "HoldingRequest": {
+        "type": "object",
+        "properties": {
+          "cph": {
+            "type": "string",
+            "description": "The county, parish and holding (CPH) number."
+          }
+        }
+      },
+      "HoldingResponse": {
+        "type": "object",
+        "properties": {
+          "cph": {
+            "type": "string",
+            "description": "The county, parish and holding (CPH) number."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the holding."
+          },
+          "holdingType": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The type of the holding."
+          },
+          "address": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The address of the holding."
+          },
+          "keeperName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the keeper."
+          }
+        }
+      },
+      "HoldingRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The role code."
+          },
+          "species": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The species associated with the role."
+          }
+        }
+      },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "PaginatedResponseOfHoldingResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Number of items on the current page.",
+            "format": "int32"
+          },
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Total number of items across all pages.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldingResponse"
+            },
+            "description": "The items on the current page."
+          },
+          "page": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The current page number (1-based).",
+            "format": "int32"
+          },
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The number of items per page.",
+            "format": "int32"
+          },
+          "totalPages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The total number of pages.",
+            "format": "int32"
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "description": "Whether there is a next page available."
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "description": "Whether there is a previous page available."
+          }
+        }
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegistrationBundleRequest": {
+        "type": "object",
+        "properties": {
+          "clientReference": {
+            "type": "string",
+            "description": "The client reference identifier for the registration bundle."
+          },
+          "holding": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The holding information where the animals are being registered.",
+                "$ref": "#/components/schemas/HoldingRequest"
+              }
+            ]
+          },
+          "submittedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The identifier of the user or system submitting the bundle."
+          },
+          "animals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnimalRegistrationRequest"
+            },
+            "description": "The list of animal registrations included in the bundle."
+          }
+        }
+      },
+      "SireRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "earTag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ear tag of the sire."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the sire."
+          }
+        }
+      },
+      "SubmissionAnimalValidationResult": {
+        "type": "object",
+        "properties": {
+          "animalId": {
+            "type": "string",
+            "description": "The unique identifier of the animal.",
+            "format": "uuid"
+          },
+          "earTag": {
+            "type": "string",
+            "description": "The ear tag of the animal."
+          },
+          "isValid": {
+            "type": "boolean",
+            "description": "Indicates whether the animal is valid."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorItem"
+            },
+            "description": "The validation errors for the animal."
+          }
+        }
+      },
+      "SubmissionValidationResult": {
+        "type": "object",
+        "properties": {
+          "submissionId": {
+            "type": "string",
+            "description": "The unique identifier of the submission.",
+            "format": "uuid"
+          },
+          "isValid": {
+            "type": "boolean",
+            "description": "Indicates whether the submission is valid."
+          },
+          "status": {
+            "type": "string",
+            "description": "The validation status of the submission."
+          },
+          "errorCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The total number of validation errors in the submission.",
+            "format": "int32"
+          },
+          "animalResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmissionAnimalValidationResult"
+            },
+            "description": "The validation results for the animals in the submission."
+          }
+        }
+      },
+      "UserCphResponse": {
+        "type": "object",
+        "properties": {
+          "cph": {
+            "type": "string",
+            "description": "The county, parish and holding (CPH) number."
+          },
+          "holdingId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The keeper data identifier of the holding the CPH belongs to."
+          },
+          "holdingName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name of the holding, where the source carries one."
+          },
+          "role": {
+            "type": "string",
+            "description": "The role the user holds on the holding."
+          }
+        }
+      },
+      "UserDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The identity provider subject claim."
+          },
+          "email": {
+            "type": "string",
+            "description": "The email address of the user."
+          },
+          "firstName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The first name of the user."
+          },
+          "lastName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The last name of the user."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The display name of the user."
+          },
+          "cphs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserCphResponse"
+            },
+            "description": "The CPHs the user was associated with when they last signed in."
+          }
+        }
+      },
+      "ValidationErrorItem": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The validation error code."
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the validation error."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "Service-to-service API key (interim until AWS STS).",
+        "name": "x-api-key",
+        "in": "header"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Cattle"
+    },
+    {
+      "name": "Holdings"
+    },
+    {
+      "name": "Registrations"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Health"
+    }
+  ]
+}

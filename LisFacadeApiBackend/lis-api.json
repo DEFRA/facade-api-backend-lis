@@ -1,0 +1,3729 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "3rd Party LIS API",
+    "description": "The **Beta version** of this API is a pre-release version made available for external testing and feedback.",
+    "version": "1.0.0-beta.2",
+    "x-metadata": {
+      "category": "Livestock",
+      "tags": [
+        "Beta",
+        "Cattle",
+        "Movements"
+      ]
+    }
+  },
+  "servers": [
+    {
+      "url": "https://**baseurl**/v1",
+      "description": "api url details shared upon api access approval"
+    }
+  ],
+  "security": [
+    {
+      "ApiSubscriptionKey": [],
+      "ApiAccessToken": []
+    }
+  ],
+  "paths": {
+    "/movements": {
+      "post": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Creates a new movement record (sync or async).",
+        "description": "Creates a new movement in the system using the details provided in the request body. The response behaviour depends on the requested processing mode. In sync mode, the movement is created immediately and the created resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the creation status.\n",
+        "operationId": "postMovements",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          }
+        ],
+        
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "movementData": {
+                    "$ref": "#/components/schemas/movement"
+                  },
+                  "document": {
+                    "$ref": "#/components/schemas/DocumentRequest"
+                  }
+                }
+              },
+              "encoding": {
+                "movementData": {
+                  "contentType": "application/json"
+                },
+                "document": {
+                  "contentType": "application/octet-stream"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "description": "OK - Successful operation with identifier in response body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementResponse1"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/MovementBadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Retrieves movement records.",
+        "description": "Retrieves one or more movement records from the system based on the supplied query parameters. The response returns matching records that meet the filtering criteria. If no filters are provided, the endpoint returns records according to the default retrieval rules.\nThe movement `state` value returned in each record is context-sensitive and depends on the role of the requesting user. The state may differ depending on whether the viewer is the Originator or the Counterparty of the movement.\n",
+        "operationId": "getMovements",
+        "parameters": [
+          {
+            "name": "siteIdentifier",
+            "in": "query",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The end-point returns movements where departure/arrival is this site.",
+            "example": "28/822/2977"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/movementState"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "species",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/species"
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "minDepartureDate",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/datetime"
+            }
+          },
+          {
+            "name": "maxDepartureDate",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/datetime"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xPage"
+          },
+          {
+            "$ref": "#/components/parameters/xPageSize"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "movementNumber",
+                "departureDate",
+                "state"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xSort"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Movements"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/movements/{movementNumber}": {
+      "get": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Retrieves a specific movement by movement number.",
+        "description": "Retrieves the details of a single movement using its unique movementNumber. If the specified movement exists, the full resource is returned. If the movement does not exist, an appropriate error response is returned.\nThe movement `state` value returned is context-sensitive and depends on the role of the requesting user. The state may differ depending on whether the viewer is the Originator or the Counterparty of the movement.        \n",
+        "operationId": "getMovementById",
+        "parameters": [
+          {
+            "name": "movementNumber",
+            "in": "path",
+            "description": "Movement number of the movement to retrieve",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 55663427
+            }
+          },
+          {
+            "name": "siteIdentifier",
+            "in": "query",
+            "description": "Specifies the site context for the request. The endpoint returns movements where this site is either the departure or arrival location.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "28/822/2977"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/movement"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Updates an existing movement record (sync or async).",
+        "description": "Updates the details of an existing movement identified by the given movementNumber. The request body should contain the updated movement data. The response behaviour depends on the requested processing mode. In sync mode, the movement is updated immediately and the updated resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the update status. If the specified movement does not exist, an appropriate error response is returned.\n",
+        "operationId": "updateMovement",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          },
+          {
+            "name": "movementNumber",
+            "in": "path",
+            "description": "movement number of the movement to update",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 55663427
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/movement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation.",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementResponse1"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/MovementBadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Deletes an existing movement record (synchronous or asynchronous).",
+        "description": "Deletes an existing movement identified by the given movementNumber. The response behaviour depends on the requested processing mode. In synchronous mode, the movement is deleted immediately and a confirmation is returned in the response. In asynchronous mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the deletion status. If the specified movement does not exist, an appropriate error response is returned.\n",
+        "operationId": "deleteMovement",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          },
+          {
+            "name": "movementNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 55663427
+            },
+            "description": "The movement number of the movement to cancel."
+          }
+        ],
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "204": {
+            "description": "No Content. The movement was successfully cancelled.",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/movements/{movementNumber}/confirmations": {
+      "post": {
+        "tags": [
+          "Movements"
+        ],
+        "summary": "Creates a confirmation for a specific movement (sync or async).",
+        "description": "Creates a confirmation for the movement identified by the given movementNumber. The request body should include the confirmation details. The response behaviour depends on the requested processing mode. In synchronous mode, the confirmation is processed immediately and the resulting resource is returned in the response. In asynchronous mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the confirmation status. If the specified movement does not exist, an appropriate error response is returned.\n",
+        "operationId": "confirmMovement",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          },
+          {
+            "name": "movementNumber",
+            "in": "path",
+            "description": "movement number of the movement to confirm",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "example": 55663427
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confirmation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successfull",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Confirmation"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/MovementBadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/hauliers": {
+      "get": {
+        "tags": [
+          "Hauliers"
+        ],
+        "summary": "Retrieve a list of hauliers.",
+        "description": "The endpoint allows searching and retrieving a list of hauliers.",
+        "operationId": "getHauliers",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/species"
+              }
+            },
+            "allowEmptyValue": false,
+            "required": false
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "allowEmptyValue": false
+          },
+          {
+            "$ref": "#/components/parameters/xPage"
+          },
+          {
+            "$ref": "#/components/parameters/xPageSize"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "partyNumber",
+                "name"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xSort"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HaulierList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/rejectionreasons": {
+      "get": {
+        "tags": [
+          "Movement Reference"
+        ],
+        "summary": "Retrieves movement rejection reasons.",
+        "description": "Retrieves the list of valid rejection reasons that can be applied to movements. The response returns the configured rejection reason codes and their descriptions to support validation and client-side selection when rejecting a movement.\n",
+        "operationId": "getMovementRejectionReasons",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "allowEmptyValue": false,
+            "schema": {
+              "$ref": "#/components/schemas/species"
+            },
+            "style": "form"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RejectionReasonList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/animals": {
+      "post": {
+        "tags": [
+          "Animals"
+        ],
+        "summary": "Create a new animal record.",
+        "description": "Creates a new animal in the system using the details provided in the request body. The response behaviour depends on the requested processing mode. In sync mode, the animal is created immediately and the created resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the creation status.\n",
+        "operationId": "postAnimal",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Animal"
+                  },
+                  {
+                    "description": "Animal"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation.",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/AnimalBadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Animals"
+        ],
+        "summary": "Retrieves animal records.",
+        "description": "Retrieves one or more animals from the system based on the supplied query parameters. The response returns matching animal summary records that meet the provided filtering criteria. If no filters are supplied, the endpoint returns animals according to the default retrieval rules.\n",
+        "operationId": "getAnimals",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/species"
+            },
+            "description": "The end-point returns animals of this species."
+          },
+          {
+            "name": "siteIdentifier",
+            "in": "query",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The end-point returns animals for this site.",
+            "example": "28/822/2977"
+          },
+          {
+            "$ref": "#/components/parameters/xPage"
+          },
+          {
+            "$ref": "#/components/parameters/xPageSize"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "animalIdentifier",
+                "state"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xSort"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "values": {
+                      "items": {
+                        "$ref": "#/components/schemas/AnimalSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/animals/{identifier}": {
+      "get": {
+        "tags": [
+          "Animals"
+        ],
+        "summary": "Retrieves a specific animal by identifier.",
+        "description": "Retrieves the details of a single animal using its unique identifier. If the specified animal exists, the full resource is returned. If the animal does not exist, an appropriate error response is returned.\n",
+        "operationId": "getAnimal",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "UK123456654321"
+            },
+            "description": "The identifier of the animal to get."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Animal"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Animals"
+        ],
+        "summary": "Updates an existing animal record (sync or async).",
+        "description": "Updates the details of an existing animal identified by the given identifier. The request body should contain the updated animal data. The response behaviour depends on the requested processing mode. In sync mode, the animal is updated immediately and the updated resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the update status. If the specified animal does not exist, an appropriate error response is returned.\n",
+        "operationId": "updateAnimalPut",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "UK654326123455"
+            },
+            "description": "The identifier of the animal to update."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Animal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation.",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/AnimalBadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Animals"
+        ],
+        "summary": "Deletes an existing animal record (sync or async).",
+        "description": "Deletes an existing animal identified by the given identifier. The response behaviour depends on the requested processing mode. In sync mode, the animal is deleted immediately and a confirmation is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the deletion status. If the specified animal does not exist, an appropriate error response is returned.\n",
+        "operationId": "deleteAnimal",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "UK654326123455"
+            },
+            "description": "The identifier of the animal to delete."
+          }
+        ],
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "204": {
+            "description": "No Content. The request has succeeded.",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/AnimalBadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/lostfounds": {
+      "get": {
+        "tags": [
+          "Animal Lostfounds"
+        ],
+        "summary": "Retrieves lost and found records.",
+        "description": "Retrieves one or more lost and found records from the system based on the supplied query parameters. The response returns matching records that meet the filtering criteria. If no filters are provided, the endpoint returns records according to the default retrieval rules.\n",
+        "operationId": "getLostFounds",
+        "parameters": [
+          {
+            "name": "siteIdentifier",
+            "in": "query",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "If populated the end-point will return animals for this site.",
+            "example": "28/822/2977"
+          },
+          {
+            "name": "identifer",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "identifer of the Animal"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                
+                "type": "string",
+                "enum": [
+                  "lost",
+                  "stolen",
+                  "found"
+                ]
+              }
+            }
+          },
+          {
+            "name": "minEventDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "maxEventDate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xPage"
+          },
+          {
+            "$ref": "#/components/parameters/xPageSize"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "allowEmptyValue": false,
+            "schema": {
+              "type": "string",
+              "default": "eventDate",
+              "enum": [
+                "status",
+                "eventDate"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/xSort"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer"
+                    },
+                    "values": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LostFound"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Animal Lostfounds"
+        ],
+        "summary": "Creates a new lost and found record (sync or async).",
+        "description": "Creates a new lost and found record in the system using the details provided in the request body. The response behaviour depends on the requested processing mode. In sync mode, the record is created immediately and the newly created resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the creation status.\n",
+        "operationId": "createLostFound",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/xCorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/xRequestMode"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LostFound"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LostFoundResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/AnimalBadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/lostfounds/{id}": {
+      "get": {
+        "tags": [
+          "Animal Lostfounds"
+        ],
+        "summary": "Retrieves a specific lost and found record by ID.",
+        "description": "Retrieves the details of a single lost and found record using its unique identifier. If the specified record exists, the full resource is returned. If the record does not exist, an appropriate error response is returned.\n",
+        "operationId": "getLostFoundsRecord",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/uuid"
+            },
+            "description": "Lostfound record id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LostFound"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Animal Lostfounds"
+        ],
+        "summary": "Updates an existing lost and found record (sync or async).",
+        "description": "Updates the details of an existing lost and found record identified by the given ID. The request body should contain the updated record data. The response behaviour depends on the requested processing mode. In sync mode, the record is updated immediately and the updated resource is returned in the response. In async mode, the request is accepted for processing and a tracking reference is returned to allow the client to monitor the update status. If the specified record does not exist, an appropriate error response is returned.\n",
+        "operationId": "amendLostFound",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/uuid"
+                },
+                {
+                  "example": "df44b048-aa6a-4b2f-8ae7-daad7d3f6dc4"
+                }
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LostFound"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LostFoundResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "$ref": "#/components/responses/Accepted"
+          },
+          "400": {
+            "$ref": "#/components/responses/AnimalBadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/deathreasons": {
+      "get": {
+        "tags": [
+          "Animal Reference"
+        ],
+        "summary": "Retrieves death reason records.",
+        "description": "Retrieves one or more death reason records from the system based on the supplied query parameters. The response returns matching records that meet the filtering criteria. If no filters are provided, the endpoint returns records according to the default retrieval rules.\n",
+        "operationId": "getAnimalDeathReasons",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "allowEmptyValue": false,
+            "schema": {
+              "$ref": "#/components/schemas/species"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeathReasonList"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/breeds": {
+      "get": {
+        "tags": [
+          "Animal Reference"
+        ],
+        "summary": "Retrieves breed records.",
+        "description": "Retrieves one or more breed records from the system based on the supplied query parameters. The response returns matching records that meet the filtering criteria. If no filters are provided, the endpoint returns records according to the default retrieval rules.\n",
+        "operationId": "getAnimalBreeds",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "allowEmptyValue": false,
+            "schema": {
+              "$ref": "#/components/schemas/species"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreedList"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/genotypes": {
+      "get": {
+        "tags": [
+          "Animal Reference"
+        ],
+        "summary": "Retrieves genotype records.",
+        "description": "Retrieves one or more genotype records from the system based on the supplied query parameters. The response returns matching records that meet the filtering criteria. If no filters are provided, the endpoint returns records according to the default retrieval rules.\n",
+        "operationId": "getAnimalGenotypes",
+        "parameters": [
+          {
+            "name": "species",
+            "in": "query",
+            "required": true,
+            "allowEmptyValue": false,
+            "schema": {
+              "$ref": "#/components/schemas/species"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful operation",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenotypeList"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/requeststatus/{requestId}": {
+      "get": {
+        "tags": [
+          "Request Status"
+        ],
+        "summary": "Get async http request status",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "allowEmptyValue": false,
+            "required": true,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/uuid"
+                },
+                {
+                  "example": "b0df91f3-918e-4cb1-908f-cb489f1e9c63"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK - Successful",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Errors"
+                },
+                "examples": {
+                  "not-found": {
+                    "$ref": "#/components/examples/not-found"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Errors"
+                },
+                "examples": {
+                  "server-error": {
+                    "$ref": "#/components/examples/server-error"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "headers": {
+              "LI-Request-Id": {
+                "$ref": "#/components/headers/xRequestId"
+              },
+              "LI-Correlation-Id": {
+                "$ref": "#/components/headers/xCorrelationId"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/xRetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Errors"
+                },
+                "examples": {
+                  "server-error": {
+                    "$ref": "#/components/examples/service-unavailable"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiSubscriptionKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Ocp-Apim-Subscription-Key",
+        "description": "Your API key. Pass it in the `Ocp-Apim-Subscription-Key` header. This is used to identify your application."
+      },
+      "ApiAccessToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Use your JWT access token to authorize requests. Pass it in the `Authorization` header. The token is acquired via user authorization flow"
+      }
+    },
+    "schemas": {
+      
+      "movementState": {
+        "type": "string",
+        "enum": [
+          "awaitingConfirmation",
+          "awaitingReview",
+          "blocked",
+          "complete",
+          "cancelled",
+          "inDispute",
+          "preNotified",
+          "resubmit"
+        ]
+      },
+      
+      "species": {
+        "type": "string",
+        "enum": [
+          "bison",
+          "buffalo",
+          "cattle",
+          "deer",
+          "goats",
+          "sheep"
+        ]
+      },
+      "datetime": {
+        "type": "string",
+        "format": "date-time",
+        "description": "A date and time, in the RFC 3339 format (aka ISO8601)."
+      },
+      
+      "batches": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "species": {
+              "$ref": "#/components/schemas/species"
+            },
+            "animals": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "animalIdentifier": {
+                        "type": "string",
+                        "example": "UK12345678910"
+                      }
+                    },
+                    "required": [
+                      "animalIdentifier"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "mark": {
+                        "type": "string",
+                        "example": "556743"
+                      },
+                      "quantity": {
+                        "type": "integer",
+                        "example": 1
+                      }
+                    },
+                    "required": [
+                      "quantity"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "species"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "date": {
+        "type": "string",
+        "format": "date",
+        "description": "A date without a time component, in the RFC 3339 format (aka ISO8601)."
+      },
+      "time": {
+        "type": "string",
+        "format": "time",
+        "example": "23:30Z",
+        "description": "A time (no date component), in the RFC 3339 format (aka ISO8601)."
+      },
+      
+      "siteType": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "readOnly": true,
+        "required": [
+          "type",
+          "description"
+        ]
+      },
+      "site": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/siteType"
+              },
+              {
+                "description": "This refers to the type of site activity, such as Market, Abattoir, etc."
+              }
+            ]
+          },
+          
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "string",
+                  "example": "27/811/2976"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "This refers to the type of site identifier, such as holdingNumber, fsaNumber, etc.",
+                  "example": "holdingNumber",
+                  "readOnly": true
+                }
+              },
+              "required": [
+                "identifier",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "name": {
+            "allOf": [
+              {
+                "type": "string"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "identifiers"
+        ]
+      },
+      
+      "timestampedSite": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "$ref": "#/components/schemas/date"
+          },
+          "time": {
+            "$ref": "#/components/schemas/time"
+          },
+          "site": {
+            "$ref": "#/components/schemas/site"
+          }
+        },
+        "required": [
+          "site"
+        ],
+        "additionalProperties": false
+      },
+      "MovementError": {
+        "type": "object",
+        "properties": {
+          "movementNumber": {
+            "type": "number",
+            "example": 55663429
+          },
+          "code": {
+            "type": "string",
+            "example": "MOVEMENT_STATE_UNAVAILABLE"
+          },
+          "message": {
+            "type": "string",
+            "example": "The movement state could not be determined at this time. Please try again later or contact support if the issue persists."
+          }
+        },
+        "required": [
+          "movementNumber",
+          "code",
+          "message"
+        ]
+      },
+      
+      "MovementMeta": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "succeeded": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "succeeded",
+          "failed"
+        ]
+      },
+      
+      "Movements": {
+        "type": "object",
+        "properties": {
+          
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "movementNumber": {
+                  "type": "number",
+                  "example": 55663427
+                },
+                "batches": {
+                  "$ref": "#/components/schemas/batches"
+                },
+                "departure": {
+                  "$ref": "#/components/schemas/timestampedSite"
+                },
+                "arrival": {
+                  "$ref": "#/components/schemas/timestampedSite"
+                },
+                "state": {
+                  "$ref": "#/components/schemas/movementState"
+                }
+              }
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovementError"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/MovementMeta"
+          }
+        },
+        "required": [
+          "values",
+          "errors",
+          "meta"
+        ]
+      },
+      "uuid": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+        "description": "A Universally Unique Identifier"
+      },
+      
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "A URI reference that identifies the problem type.",
+            "format": "uri",
+            "maxLength": 1024
+          },
+          "status": {
+            "type": "integer",
+            "description": "The HTTP status code generated by the origin server for this occurrence of the problem.",
+            "format": "int32",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "title": {
+            "type": "string",
+            "description": "A short, human-readable summary of the problem type. It should not change from occurrence to occurrence of the problem, except for purposes of localization.",
+            "maxLength": 1024
+          },
+          "detail": {
+            "type": "string",
+            "description": "A human-readable explanation specific to this occurrence of the problem.",
+            "maxLength": 4096
+          },
+          "errors": {
+            "$ref": "#/components/schemas/ProblemDetails"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "title",
+          "detail"
+        ]
+      },
+      
+      "Errors": {
+        "type": "array",
+        "description": "An array of error details to accompany a problem details response.",
+        "minItems": 1,
+        "maxItems": 1000,
+        "items": {
+          "$ref": "#/components/schemas/ProblemDetails"
+        }
+      },
+      
+      "departureSiteType": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "readOnly": true
+          },
+          "description": {
+            "type": "string",
+            "readOnly": true
+          },
+          "activity": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "slaughterMarket"
+              }
+            }
+          }
+        },
+        "required": [
+          "type",
+          "description"
+        ]
+      },
+      
+      "departureSite": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/departureSiteType"
+              },
+              {
+                "description": "This refers to the type of site activity, such as Market, Abattoir, etc."
+              }
+            ]
+          },
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "string",
+                  "example": "27/811/2976"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "This refers to the type of site identifier, such as holdingNumber, fsaNumber, etc.",
+                  "example": "holdingNumber",
+                  "readOnly": true
+                }
+              },
+              "required": [
+                "identifier",
+                "type"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "name": {
+            "allOf": [
+              {
+                "type": "string"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "identifiers"
+        ]
+      },
+      
+      "departureTimestampedSite": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "$ref": "#/components/schemas/date"
+          },
+          "time": {
+            "$ref": "#/components/schemas/time"
+          },
+          "site": {
+            "$ref": "#/components/schemas/departureSite"
+          }
+        },
+        "required": [
+          "site"
+        ],
+        "additionalProperties": false
+      },
+      
+      "movementReport": {
+        "type": "object",
+        "properties": {
+          "departure": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/departureTimestampedSite"
+              },
+              {
+                "description": "The departure details - location, date and time for the movement. This is a required field for creating a movement record, representing the origin site where the animal is being moved from."
+              }
+            ]
+          },
+          "arrival": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/timestampedSite"
+              },
+              {
+                "description": "The arrival location, date and time for the movement. This is a required field for creating a movement record, representing the destination site where the animal is being moved to."
+              }
+            ]
+          },
+          "number": {
+            "type": "integer",
+            "example": 55663427,
+            "readOnly": true,
+            "description": "A unique number for the movement. This field serves as the primary key for tracking individual movements, ensuring each movement record can be uniquely referenced within the system."
+          },
+          "receivedDate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/date"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "potentialMatchMovementNumbers": {
+            "allOf": [
+              {
+                "type": "array",
+                "description": "A list of movement numbers that are potential matches based on similar departure and arrival sites, dates, and animals. These movements are identified by the system as potential duplicates, but have not yet been verified as matches. This helps track possible inconsistencies that may require further review or validation.",
+                "items": {
+                  "type": "integer"
+                },
+                "readOnly": true,
+                "example": [
+                  55663450,
+                  55663451,
+                  55663452
+                ]
+              }
+            ]
+          },
+          "batches": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/batches"
+              },
+              {
+                "description": "A list of batches, each representing a group of animals of a specific species, specified at the time of creating the movement record. Each batch contains animals identified by their unique `AnimalIdentifiers`, which uniquely track individual animals within the batch."
+              }
+            ]
+          },
+          
+          "return": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "$ref": "#/components/schemas/date"
+              },
+              "time": {
+                "$ref": "#/components/schemas/time"
+              },
+              "number": {
+                "type": "integer",
+                "example": 55663427,
+                "readOnly": true
+              }
+            },
+            "readOnly": true,
+            "additionalProperties": false,
+            "description": "If the movement is of 'roaming' kind, this field contains the details of the return movement. When fetching the movement details, it will include information about the return movement such as the movement number, date, and time. This helps track the return journey of the animals after roaming or temporary relocation."
+          }
+        },
+        "required": [
+          "departure",
+          "arrival",
+          "batches",
+          "number"
+        ]
+      },
+      
+      "internationalAddress": {
+        "type": "object",
+        "properties": {
+          "singleLineAddress": {
+            "type": "string",
+            "example": "Grawertstrasse 16, 48146 Munster, Germany"
+          },
+          "region": {
+            "type": "string",
+            "example": "North Rhine-Westphalia"
+          },
+          "countryCode": {
+            "title": "ISO 3166-1 Alpha-2 Country code",
+            "description": "A valid 2-digit ISO country code (ISO 3166-1 alpha-2), or, an array of valid ISO codes.",
+            "type": "string",
+            "pattern": "^[A-Z]{2}$",
+            "example": "DE"
+          }
+        },
+        "required": [
+          "region",
+          "countryCode"
+        ]
+      },
+      
+      "movement": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/movementReport"
+          }
+        ],
+        "properties": {
+          "matchedMovementNumbers": {
+            "type": "array",
+            "description": "A list of movement numbers that the system has automatically matched based on matching departure and arrival sites, dates, and animals. If multiple movements are found that meet these criteria, the system designates one as the main movement and returns the other matching movement numbers in this array. This ensures accurate tracking and resolution of potential duplicates.",
+            "items": {
+              "type": "integer"
+            },
+            "readOnly": true,
+            "example": [
+              55663427,
+              55663428
+            ]
+          },
+          
+          "movementKind": {
+            "type": "string",
+            "readOnly": true,
+            "description": "The type of movement for the livestock, automatically set by the system based on the nature of the movement record. This could include values such as \"departure\", \"arrival\", \"transfer\", or other movement classifications, helping to categorize and differentiate between various types of livestock movements.",
+            "enum": [
+              "regular",
+              "circular",
+              "export",
+              "import"
+            ]
+          },
+          "inBusinessMoveFlag": {
+            "type": "boolean",
+            "description": "Indicates whether the movement is an in-business move (same keeper at departure and arrival).",
+            "readOnly": true,
+            "example": true
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/movementState"
+              },
+              {
+                "readOnly": true
+              },
+              {
+                "description": "The current status or state of the movement, set by the system. This field tracks the progress or stage of the movementand helps monitor the status of movement throughout the movement review process."
+              }
+            ]
+          },
+          
+          "confirmations": {
+            "allOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    
+                    "reportingSite": {
+                      "type": "string",
+                      "enum": [
+                        "departure",
+                        "arrival",
+                        "both"
+                      ]
+                    },
+                    
+                    "action": {
+                      "type": "string",
+                      "enum": [
+                        "confirmOff",
+                        "accept",
+                        "reject"
+                      ]
+                    },
+                    "number": {
+                      "type": "integer",
+                      "example": 10321
+                    },
+                    "reason": {
+                      "type": "string",
+                      "example": "Possible TB Hazard"
+                    },
+                    "rejectionReasonId": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/uuid"
+                        },
+                        {
+                          "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                        }
+                      ]
+                    },
+                    "rejectionReason": {
+                      "type": "string",
+                      "example": "Other"
+                    },
+                    "otherReason": {
+                      "type": "string",
+                      "example": "Other"
+                    },
+                    "createdDateTime": {
+                      "$ref": "#/components/schemas/datetime"
+                    }
+                  },
+                  "required": [
+                    "action"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          
+          "movementReports": {
+            "allOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/movementReport"
+                    }
+                  ],
+                  "properties": {
+                    "reportingSite": {
+                      "type": "string",
+                      "enum": [
+                        "departure",
+                        "arrival",
+                        "both"
+                      ]
+                    },
+                    "createdDateTime": {
+                      "$ref": "#/components/schemas/datetime"
+                    },
+                    "updatedDateTime": {
+                      "$ref": "#/components/schemas/datetime"
+                    }
+                  }
+                }
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          
+          "haulier": {
+            "type": "object",
+            "properties": {
+              
+              "type": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "arrival",
+                  "haulier"
+                ]
+              },
+              "authorisationNumber": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "trailerNumber": {
+                "type": "string",
+                "example": "TRL 0125/3"
+              },
+              "vehicleRegistrationNumber": {
+                "type": "string",
+                "example": "YM24 DLY"
+              }
+            }
+          },
+          "exportInformation": {
+            "$ref": "#/components/schemas/internationalAddress"
+          },
+          
+          "importInformation": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/internationalAddress"
+              }
+            ],
+            "properties": {
+              "importDeclarationFlag": {
+                "type": "boolean"
+              },
+              "healthCertificateNumber": {
+                "type": "string",
+                "example": "186GBBP"
+              },
+              "ipaffsReferenceNumber": {
+                "type": "string",
+                "example": "CHEDA.GB.2024.1234567"
+              }
+            },
+            "required": [
+              "importDeclarationFlag",
+              "ipaffsReferenceNumber",
+              "region",
+              "countryCode"
+            ]
+          },
+          
+          "fciInformation": {
+            "type": "object",
+            "properties": {
+              "declarationFlag": {
+                "type": "boolean"
+              },
+              "diseaseDetails": {
+                "type": "string",
+                "example": "BVD"
+              },
+              "treatmentDetails": {
+                "type": "string",
+                "example": "BVDV Vaccine X"
+              },
+              "analysisSamples": {
+                "type": "string",
+                "example": "Fecal samples show no sign of parasites"
+              }
+            },
+            "required": [
+              "declarationFlag"
+            ]
+          },
+          
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "importHealthCertificate",
+                    "circularMovementPermit"
+                  ]
+                },
+                "id": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/uuid"
+                    },
+                    {
+                      "readOnly": true
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "createdDateTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "updatedDateTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          
+          "messages": {
+            "allOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "DR001"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Movement state cannot be updated."
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                },
+                "minItems": 1
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          }
+        },
+        "required": [
+          "movementReports",
+          "number",
+          "state",
+          "movementKind",
+          "createdDateTime",
+          "updatedDateTime"
+        ]
+      },
+      
+      "DocumentRequest": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "description": "The name of the document being uploaded."
+          },
+          "documentContent": {
+            "type": "string",
+            "format": "binary",
+            "description": "The binary content of the document to be uploaded (max 5MB).",
+            "maxLength": 5242880
+          }
+        }
+      },
+      
+      "MovementResponse1": {
+        "type": "object",
+        "properties": {
+          "movementNumber": {
+            "type": "number",
+            "readOnly": true,
+            "example": 55663427
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string",
+                "format": "uri",
+                "readOnly": true,
+                "example": "/movements/55663427"
+              }
+            }
+          }
+        }
+      },
+      
+      "AsyncRequestStatus": {
+        "type": "string",
+        "enum": [
+          "Pending",
+          "Completed",
+          "Failed"
+        ]
+      },
+      
+      "AsyncAcceptedResponse": {
+        "type": "object",
+        "required": [
+          "requestStatusUrl"
+        ],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/uuid"
+              },
+              {
+                "example": "df44b048-aa6a-4b2f-8ae7-daad7d3f6dc4"
+              }
+            ]
+          },
+          "requestStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AsyncRequestStatus"
+              },
+              {
+                "example": "Pending"
+              }
+            ]
+          },
+          "requestDate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "example": "2024-05-08T12:45:55.235Z"
+              }
+            ]
+          },
+          "requestStatusUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to poll for the status of the asynchronous request.",
+            "example": "https://example.com/requests/df44b048-aa6a-4b2f-8ae7-daad7d3f6dc4"
+          }
+        }
+      },
+      
+      "ReportAuthor": {
+        "type": "object",
+        "properties": {
+          "reportingSite": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "arrival",
+              "both"
+            ],
+            "example": "departure"
+          }
+        }
+      },
+      
+      "Confirmation": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ReportAuthor"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "number",
+                "readOnly": true,
+                "example": 55663427
+              },
+              
+              "action": {
+                "type": "string",
+                "enum": [
+                  "confirmOff",
+                  "accept",
+                  "reject"
+                ],
+                "example": "reject"
+              },
+              "rejectionReasonId": {
+                "$ref": "#/components/schemas/uuid"
+              },
+              "rejectionReason": {
+                "type": "string",
+                "example": "Other",
+                "readOnly": true,
+                "nullable": true
+              },
+              "otherReason": {
+                "type": "string",
+                "nullable": true,
+                "example": "Possible TB Hazard"
+              },
+              "createdDateTime": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/datetime"
+                  },
+                  {
+                    "readOnly": true
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "required": [
+          "action"
+        ]
+      },
+      
+      "haulierState": {
+        "description": "The state of a person or organisation.",
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive",
+          "unknown"
+        ]
+      },
+      "postcode": {
+        "type": "string",
+        "pattern": "^[A-Z]{1,2}[0-9][0-9A-Z]? ?[0-9][A-Z]{2}$"
+      },
+      
+      "correspondenceAddress": {
+        "type": "object",
+        "description": "The contact address of a person or organisation.",
+        "properties": {
+          "singleLineAddress": {
+            "type": "string",
+            "example": "The Livery Yard, Hunshelf Bank, Stocksbridge"
+          },
+          "postcode": {
+            "$ref": "#/components/schemas/postcode"
+          }
+        }
+      },
+      
+      "haulier": {
+        "type": "object",
+        "properties": {
+          "authorisationNumber": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "species": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/species"
+            }
+          },
+          "state": {
+            "$ref": "#/components/schemas/haulierState"
+          },
+          "mobile": {
+            "type": "string"
+          },
+          "landline": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "correspondenceAddress": {
+            "$ref": "#/components/schemas/correspondenceAddress"
+          }
+        }
+      },
+      
+      "HaulierList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "example": 1
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/haulier"
+            }
+          }
+        }
+      },
+      
+      "RejectionReasonList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rejectionReasonId": {
+                  "$ref": "#/components/schemas/uuid"
+                },
+                "rejectionReason": {
+                  "type": "string",
+                  "example": "Movement didn't happen"
+                }
+              }
+            }
+          }
+        }
+      },
+      
+      "sex": {
+        "type": "string",
+        "enum": [
+          "female",
+          "male"
+        ]
+      },
+      
+      "animal": {
+        "type": "object",
+        "description": "A record of attributes identifying an animal",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "example": "UK12345678910"
+          },
+          "species": {
+            "$ref": "#/components/schemas/species"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ian"
+          },
+          "sex": {
+            "$ref": "#/components/schemas/sex"
+          }
+        },
+        "required": [
+          "identifier"
+        ]
+      },
+      
+      "animalState": {
+        "type": "string",
+        "enum": [
+          "registered",
+          "dead",
+          "lost",
+          "stolen"
+        ]
+      },
+      
+      "breed": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Dexter Cross",
+            "readOnly": true
+          },
+          "code": {
+            "type": "string",
+            "example": "DEX"
+          },
+          "crossBreed": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        }
+      },
+      
+      "AnimalSummary": {
+        "type": "object",
+        "properties": {
+          "animal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/animal"
+              },
+              {
+                "type": "object"
+              }
+            ],
+            "properties": {
+              "state": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/animalState"
+                  },
+                  {
+                    "readOnly": true
+                  }
+                ]
+              }
+            },
+            "required": [
+              "species",
+              "sex"
+            ]
+          },
+          "breed": {
+            "$ref": "#/components/schemas/breed"
+          }
+        }
+      },
+      
+      "productionType": {
+        "type": "string",
+        "enum": [
+          "meat",
+          "dairy",
+          "beef"
+        ]
+      },
+      
+      "ParentAnimal": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/animal"
+          },
+          {
+            "type": "object"
+          },
+          {
+            "properties": {
+              "species": {
+                "readOnly": true
+              },
+              "name": {
+                "readOnly": true
+              },
+              "sex": {
+                "readOnly": true
+              }
+            }
+          }
+        ]
+      },
+      
+      "animalBirth": {
+        "type": "object",
+        "properties": {
+          "site": {
+            "$ref": "#/components/schemas/site"
+          },
+          "date": {
+            "$ref": "#/components/schemas/date"
+          },
+          "year": {
+            "allOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "mark": {
+            "type": "string",
+            "example": "556773"
+          },
+          "assistedBirthFlag": {
+            "type": "boolean"
+          },
+          "multipleBirthsFlag": {
+            "type": "boolean"
+          },
+          "embryoTransferFlag": {
+            "type": "boolean",
+            "description": "Indicates if the animal was born via embryo transfer"
+          }
+        },
+        "required": [
+          "site",
+          "assistedBirthFlag",
+          "multipleBirthsFlag",
+          "embryoTransferFlag"
+        ],
+        "additionalProperties": false
+      },
+      
+      "animalDeath": {
+        "type": "object",
+        "properties": {
+          "carcassCollectionSite": {
+            "$ref": "#/components/schemas/site"
+          },
+          "date": {
+            "$ref": "#/components/schemas/date"
+          },
+          "reason": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/uuid"
+              },
+              "name": {
+                "type": "string",
+                "example": "Abattoir Kill",
+                "readOnly": true
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "receivedDate": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/date"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "site": {
+            "$ref": "#/components/schemas/site"
+          },
+          "tseTestRequiredFlag": {
+            "type": "boolean"
+          },
+          "createdDateTime": {
+            "$ref": "#/components/schemas/datetime"
+          },
+          "updatedDateTime": {
+            "$ref": "#/components/schemas/datetime"
+          }
+        }
+      },
+      
+      "AnimalBirthingHistory": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "string",
+              "readOnly": true,
+              "example": "UK654321123456"
+            },
+            "date": {
+              "$ref": "#/components/schemas/date"
+            },
+            "sex": {
+              "$ref": "#/components/schemas/sex"
+            },
+            "birthSite": {
+              "$ref": "#/components/schemas/site"
+            }
+          }
+        }
+      },
+      
+      "Assurance": {
+        "type": "object",
+        "properties": {
+          
+          "currentAssuredState": {
+            "type": "string",
+            "enum": [
+              "assured",
+              "expired",
+              "revoked",
+              "notAssured"
+            ]
+          },
+          "assuranceHistory": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "schemeName": {
+                  "type": "string",
+                  "example": "DEFRA Vet Attestation"
+                },
+                "certificateNumber": {
+                  "type": "string",
+                  "example": "VAN-5544234-10/203/1005-11-24"
+                },
+                "certificationDate": {
+                  "$ref": "#/components/schemas/date"
+                },
+                "expiryDate": {
+                  "$ref": "#/components/schemas/date"
+                },
+                "revocationDate": {
+                  "$ref": "#/components/schemas/date"
+                },
+                "veterinarianName": {
+                  "type": "string",
+                  "example": "Dr James Herriot"
+                },
+                "rcvsMembershipNumber": {
+                  "type": "string",
+                  "example": 5544234
+                },
+                "vetPracticeName": {
+                  "type": "string",
+                  "example": "Hunshelf Vets Ltd"
+                },
+                
+                "assuredState": {
+                  "type": "string",
+                  "enum": [
+                    "assured",
+                    "expired",
+                    "revoked"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      
+      "Animal": {
+        "type": "object",
+        "properties": {
+          "animal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/animal"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "genotype": {
+                    "type": "string",
+                    "example": "QQQ/QRR",
+                    "nullable": true
+                  },
+                  "originalIdentifier": {
+                    "type": "string",
+                    "example": "USA005516557866",
+                    "nullable": true
+                  },
+                  "productionType": {
+                    "$ref": "#/components/schemas/productionType"
+                  },
+                  "state": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/animalState"
+                      },
+                      {
+                        "readOnly": true
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "required": [
+              "species",
+              "sex"
+            ]
+          },
+          "breed": {
+            "$ref": "#/components/schemas/breed"
+          },
+          "currentSite": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/site"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          
+          "importParents": {
+            "type": "object",
+            "properties": {
+              "sire": {
+                "$ref": "#/components/schemas/ParentAnimal"
+              },
+              "geneticDam": {
+                "$ref": "#/components/schemas/ParentAnimal"
+              },
+              "birthDam": {
+                "allOf": [
+                  {
+                    "description": "The animal giving birth to the animal in question. If the animal is a surrogate mother, there will be a genetic dam."
+                  },
+                  {
+                    "$ref": "#/components/schemas/ParentAnimal"
+                  }
+                ]
+              }
+            }
+          },
+          "birth": {
+            "$ref": "#/components/schemas/animalBirth"
+          },
+          "death": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/animalDeath"
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          
+          "registration": {
+            "type": "object",
+            "properties": {
+              "birthDam": {
+                "allOf": [
+                  {
+                    "description": "The animal giving birth to the animal in question. If the animal is a surrogate mother, there will be a genetic dam."
+                  },
+                  {
+                    "$ref": "#/components/schemas/ParentAnimal"
+                  }
+                ]
+              },
+              "geneticDam": {
+                "allOf": [
+                  {
+                    "description": "The genetic dam if different from the birth dam."
+                  },
+                  {
+                    "$ref": "#/components/schemas/ParentAnimal"
+                  }
+                ]
+              },
+              "sire": {
+                "$ref": "#/components/schemas/ParentAnimal"
+              },
+              "site": {
+                "$ref": "#/components/schemas/site"
+              },
+              "date": {
+                "$ref": "#/components/schemas/date"
+              },
+              
+              "category": {
+                "type": "string",
+                "enum": [
+                  "birthRegistration",
+                  "registration"
+                ]
+              },
+              "identificationDate": {
+                "$ref": "#/components/schemas/date"
+              }
+            },
+            "required": [
+              "site",
+              "date",
+              "category"
+            ]
+          },
+          "homeSite": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/site"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "birthingHistory": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnimalBirthingHistory"
+              },
+              {
+                "nullable": true
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "createdDateTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "updatedDateTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "assurance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Assurance"
+              },
+              {
+                "nullable": true
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          }
+        },
+        "required": [
+          "animal",
+          "registration"
+        ]
+      },
+      
+      "AnimalResponse": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "readOnly": true,
+            "example": "UK543017404195"
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string",
+                "format": "uri",
+                "readOnly": true,
+                "example": "/animals/UK543017404195"
+              }
+            }
+          }
+        }
+      },
+      
+      "LostFound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/uuid"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "identifier": {
+            "type": "string",
+            "nullable": false,
+            "example": "UK654321123456"
+          },
+          "site": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/site"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          
+          "status": {
+            "type": "string",
+            "enum": [
+              "found",
+              "lost",
+              "stolen"
+            ]
+          },
+          "eventDate": {
+            "$ref": "#/components/schemas/date"
+          },
+          "createdDateTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/datetime"
+              },
+              {
+                "readOnly": true
+              }
+            ]
+          },
+          "crimeReferenceNumber": {
+            "type": "string",
+            "example": "54617/23"
+          },
+          "foundDead": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "identifier",
+          "status",
+          "eventDate"
+        ]
+      },
+      
+      "LostFoundResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/uuid"
+              },
+              {
+                "example": "84ebdc54-27cf-4a12-a0aa-359041de4f9d"
+              }
+            ]
+          },
+          "links": {
+            "type": "object",
+            "properties": {
+              "self": {
+                "type": "string",
+                "format": "uri",
+                "readOnly": true,
+                "example": "/lostfounds/84ebdc54-27cf-4a12-a0aa-359041de4f9d"
+              }
+            }
+          }
+        }
+      },
+      
+      "DeathReasonList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "deathReasonId": {
+                  "$ref": "#/components/schemas/uuid"
+                },
+                "deathReason": {
+                  "type": "string",
+                  "example": "Killed for human consumption"
+                }
+              }
+            }
+          }
+        }
+      },
+      
+      "BreedList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/breed"
+            }
+          }
+        }
+      },
+      
+      "GenotypeList": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "genotype": {
+                  "type": "string",
+                  "example": "AA/Bb"
+                }
+              }
+            }
+          }
+        }
+      },
+      
+      "RequestStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AsyncRequestStatus"
+              }
+            ],
+            "example": "Completed",
+            "readOnly": true
+          },
+          "result": {
+            "type": "object",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MovementResponse1"
+              },
+              {
+                "$ref": "#/components/schemas/AnimalResponse"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "parameters": {
+      "xPage": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "allowEmptyValue": false,
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "xPageSize": {
+        "name": "pageSize",
+        "in": "query",
+        "required": false,
+        "allowEmptyValue": false,
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "xSort": {
+        "name": "sort",
+        "in": "query",
+        "required": false,
+        "allowEmptyValue": false,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        }
+      },
+      "xCorrelationId": {
+        "in": "header",
+        "name": "LI-Correlation-Id",
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/uuid"
+            },
+            {
+              "example": "1889185f-adb9-46aa-9035-1a752e9c3833"
+            }
+          ]
+        }
+      },
+      "xRequestMode": {
+        "in": "header",
+        "name": "LI-Request-Mode",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "sync",
+            "async"
+          ]
+        },
+        "description": "If no value supplied, it'll default to 'sync'"
+      }
+    },
+    "headers": {
+      "xRequestId": {
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/uuid"
+            },
+            {
+              "example": "df44b048-aa6a-4b2f-8ae7-daad7d3f6dc4"
+            }
+          ]
+        },
+        "description": "A unique identifier for the request."
+      },
+      "xCorrelationId": {
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/uuid"
+            },
+            {
+              "example": "3eb0c71f-d237-49c5-b2f9-17d4bc8ec870"
+            }
+          ]
+        },
+        "description": "A unique identifier used for traceability and correlation across systems; if not provided, the service will generate one."
+      },
+      "xRetryAfter": {
+        "schema": {
+          "type": "integer"
+        },
+        "description": "The number of seconds/minutes before you can call this endpoint again."
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Server Error",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "forbidden": {
+                "$ref": "#/components/examples/server-error"
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Service Unavailable",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "forbidden": {
+                "$ref": "#/components/examples/service-unavailable"
+              }
+            }
+          }
+        }
+      },
+      "Accepted": {
+        "description": "Accepted",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AsyncAcceptedResponse"
+            }
+          }
+        },
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          },
+          "Retry-After": {
+            "$ref": "#/components/headers/xRetryAfter"
+          }
+        }
+      },
+      "MovementBadRequest": {
+        "description": "Invalid request",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "invalid-request-schema-movement": {
+                "$ref": "#/components/examples/invalid-request-schema-movement"
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "forbidden": {
+                "$ref": "#/components/examples/forbidden"
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not found",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "not-found": {
+                "$ref": "#/components/examples/not-found"
+              }
+            }
+          }
+        }
+      },
+      "AnimalBadRequest": {
+        "description": "Invalid request",
+        "headers": {
+          "LI-Request-Id": {
+            "$ref": "#/components/headers/xRequestId"
+          },
+          "LI-Correlation-Id": {
+            "$ref": "#/components/headers/xCorrelationId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Errors"
+            },
+            "examples": {
+              "validation-error": {
+                "$ref": "#/components/examples/validation-error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "server-error": {
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.6.1",
+          "title": "Server Error",
+          "detail": "The server encountered an unexpected error",
+          "status": 500
+        }
+      },
+      "service-unavailable": {
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.6.4",
+          "title": "Service Unavailable",
+          "detail": "The service is currently unavailable",
+          "status": 503
+        }
+      },
+      "invalid-request-schema-movement": {
+        "description": "Representation of a 400 Bad Request response where the request has failed schema validation.",
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.1",
+          "status": 400,
+          "title": "Request Schema Error",
+          "detail": "The request failed schema validation.",
+          "errors": [
+            {
+              "detail": "The request is missing the required query parameter {departureDate}",
+              "code": "S002",
+              "source": "siteId"
+            },
+            {
+              "detail": "The format of the request body property {departureDate} is invalid",
+              "code": "S008",
+              "source": "#/departureDate",
+              "value": "2024-11/01"
+            }
+          ]
+        }
+      },
+      "forbidden": {
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.4",
+          "title": "Forbidden",
+          "detail": "The resource could not be returned as the requestor is not authorized",
+          "status": 403
+        }
+      },
+      "not-found": {
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5",
+          "title": "Not found",
+          "detail": "The requested resource was not found",
+          "status": 404
+        }
+      },
+      "validation-error": {
+        "description": "Representation of a 400 Bad Request response where the request does not meet the validation rules.",
+        "value": {
+          "type": "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.1",
+          "status": 400,
+          "title": "Validation Error",
+          "detail": "The request is invalid.",
+          "errors": [
+            {
+              "detail": "Birth site not known to LIS",
+              "code": "V038"
+            },
+            {
+              "detail": "The genetic or surrogate dam is not the same species as the animal being registered",
+              "code": "V006"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
