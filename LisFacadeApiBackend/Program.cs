@@ -27,6 +27,7 @@ static WebApplication BuildApp(string[] args)
 
     var app = builder.Build();
 
+    WarnIfCattleApiSettingsMissing(app.Configuration, app.Logger);
     ConfigureMiddleware(app);
     ConfigureEndpoints(app);
 
@@ -85,7 +86,26 @@ static void ConfigureHeaderPropagation(IServiceCollection services, IConfigurati
 static void ConfigureHttpClients(IServiceCollection services)
 {
     services.AddSingleton<FakeCattleApiClient>();
-    services.AddHttpClientWithTracing<CattleApiClient, CattleApiClient>();
+    services.AddHttpClientWithTracing<CattleApiClient, CattleApiClient>()
+        .ConfigureHttpClient((sp, client) =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+
+                var baseUrl = config["CattleApi:BaseUrl"];
+                if (string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    throw new InvalidOperationException(
+                        "CattleApi:BaseUrl is not configured. Set the CattleApi__BaseUrl environment variable.");
+                }
+
+                client.BaseAddress = new Uri(baseUrl);
+
+                var apiKey = config["CattleApi:ApiKey"];
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+                }
+            });
     
     services.AddKeyedSingleton<ICattleApiClient>(
         CattleApiClientKeys.Fake,
@@ -93,6 +113,20 @@ static void ConfigureHttpClients(IServiceCollection services)
     services.AddKeyedTransient<ICattleApiClient>(
         CattleApiClientKeys.Real,
         (sp, _) => sp.GetRequiredService<CattleApiClient>());
+}
+
+[ExcludeFromCodeCoverage]
+static void WarnIfCattleApiSettingsMissing(IConfiguration configuration, Microsoft.Extensions.Logging.ILogger logger)
+{
+    if (string.IsNullOrWhiteSpace(configuration["CattleApi:BaseUrl"]))
+    {
+        logger.LogWarning("CattleApi:BaseUrl is not set (CattleApi__BaseUrl). Calls to the cattle API will fail.");
+    }
+
+    if (string.IsNullOrWhiteSpace(configuration["CattleApi:ApiKey"]))
+    {
+        logger.LogWarning("CattleApi:ApiKey is not set (CattleApi__ApiKey). Requests to the cattle API will be sent without an x-api-key header.");
+    }
 }
 
 [ExcludeFromCodeCoverage]

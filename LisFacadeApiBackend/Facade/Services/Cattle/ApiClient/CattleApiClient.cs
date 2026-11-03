@@ -2,13 +2,17 @@ using LisFacadeApiBackend.Facade.Cattle.Request;
 
 namespace LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 
-public sealed class CattleApiClient(HttpClient httpClient) : ICattleApiClient
+public sealed class CattleApiClient(HttpClient httpClient, ILogger<CattleApiClient> logger) : ICattleApiClient
 {
-    public async Task<HttpResponseMessage> GetCattleDetailsAsync(
+    public Task<HttpResponseMessage> GetCattleDetailsAsync(
         string earTag,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(earTag);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        logger.LogDebug("Calling cattle API v1/cattle/ for {CattleIdentifier}", earTag);
+        return httpClient.GetAsync($"v1/cattle/{Uri.EscapeDataString(earTag)}", cancellationToken);
     }
 
     public Task<HttpResponseMessage> SearchHoldingsAsync(
