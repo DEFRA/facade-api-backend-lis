@@ -3,7 +3,7 @@
 This is a collection of the current endpoints for the lis-facade-api-backend
 
 ## Running Endpoints Locally
-The included endpoints are set to call to your local system while running the project, if you wish to run the endpoints locally, you will need to run set their EndpointService file to use the fake implementation of them, as the real one will not work locally. 
+The included endpoints are set to call to your local system while running the project, if you wish to run the endpoints locally, you will need to set their EndpointService file to use the fake implementation of them, as the real one will not work locally. 
 
 ## Here is an example of how:
 ### Change this:
