@@ -197,8 +197,8 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Theory]
-    [InlineData("\"species\":\"unknown\",\"sex\":\"Female\"")]
-    [InlineData("\"species\":\"Cattle\",\"sex\":\"unknown\"")]
+    [InlineData("\"species\":\"unknown\",\"sex\":\"Female\",\"dateRegistered\":\"2024-03-15\"")]
+    [InlineData("\"species\":\"Cattle\",\"sex\":\"unknown\",\"dateRegistered\":\"2024-03-15\"")]
     [InlineData("\"species\":\"Cattle\",\"sex\":\"Female\",\"dateRegistered\":null")]
     public async Task Get_returns_500_lis_error_when_cattle_api_required_field_is_unsupported_or_missing(
         string fields)
@@ -255,6 +255,21 @@ public class GetAnimalByIdentifierIntegrationTests
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         await AssertLisError(response, HttpStatusCode.InternalServerError, "Server Error",
             "The server encountered an unexpected error", "section-15.6.1", cancellationToken);
+    }
+
+    [Fact]
+    public async Task Get_returns_503_lis_error_when_cattle_api_request_times_out()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new StubCattleApiHandler(_ => throw new TaskCanceledException("timeout", new TimeoutException()));
+        await using var factory = CreateFactory(handler);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/animals/{KnownIdentifier}", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        await AssertLisError(response, HttpStatusCode.ServiceUnavailable, "Service Unavailable",
+            "The service is currently unavailable", "section-15.6.4", cancellationToken);
     }
 
     [Fact]
