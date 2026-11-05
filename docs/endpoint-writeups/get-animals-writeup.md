@@ -77,6 +77,14 @@ This write-up covers the open issues, assumptions and trade-offs in the `GET /an
 - **State and status** are both optional and nullable in the models. Both are affected by the assumption in section 4.
 - **Breed** is nullable in both the upstream and LIS. The translator sets it to `null` only when both breed code and name are missing.
 
+## 8. `page` and `pageSize` are bound as strings
+
+**Where:** [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), `GetAnimals` parameters and `SetIntegerPagingParameters`. Parsing is in [GetAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/GetAnimalsRequestValidator.cs), `TryBuild` and `TryParseInt`.
+
+**Decision:** `page` and `pageSize` are bound as `string?` rather than `int?`. ASP.NET rejects a value such as `page=abc` or `pageSize=2147483648` during binding with its own 400 response, before the validator runs, when they are set as `int?`. Binding raw strings lets the validator parse them, so malformed and overflowing values return the same 404 LisErrors response as negative values. The OpenAPI document still declares both as `integer` (`int32`), matching the `xPage` and `xPageSize` parameters in [lis-api.json](../../LisFacadeApiBackend/lis-api.json), through an operation transformer on the route.
+
+**Issue:** The published schema says `integer`, but the runtime accepts any string. A client that relies on the schema for validation will not see a 400 for a non-integer value; it receives a 404 instead. The LIS contract documents no 400 for this operation, so this follows the existing 404 decision in section 1. Values with surrounding whitespace, such as `page=%205`, are also rejected because `TryParseInt` does not allow whitespace.
+
 ## Summary
 
 | # | Area | Risk | Action needed |
@@ -88,3 +96,4 @@ This write-up covers the open issues, assumptions and trade-offs in the `GET /an
 | 5 | Facade paging | Whole herd fetched per request; odd behaviour without `pageSize` | N/A, cattle doesn't use paging |
 | 6 | Invalid sex skipped | Silent data omission; `Count` excludes skipped animals | Verify against contacts |
 | 7 | Field nullability | Partial mapping; species is hard-coded | N/A, current mapping is best we can provide |
+| 8 | `page` and `pageSize` as strings | Schema says `integer`, but non-integers return 404 rather than 400 | N/A, intentional; revisit if LIS documents a 400 |

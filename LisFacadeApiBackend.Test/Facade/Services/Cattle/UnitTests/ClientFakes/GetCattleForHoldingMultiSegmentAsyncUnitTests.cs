@@ -18,13 +18,16 @@ public class GetCattleForHoldingMultiSegmentAsyncUnitTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal(["UK12345678901", "UK12345678902"], cattle!.Select(c => c.EarTag));
+        Assert.Equal(
+            ["UK12345678901", "UK12345678902", "UK12345678903", "UK12345678904", "UK12345678905",
+             "UK12345678906", "UK12345678907", "UK12345678908", "UK12345678909", "UK12345678910"],
+            cattle!.Select(c => c.EarTag));
     }
 
     [Theory]
     [InlineData("uk12345678902", null, null, "UK12345678902")]
     [InlineData(null, "HOLSTEIN", null, "UK12345678901")]
-    [InlineData(null, null, "male", "UK12345678902")]
+    [InlineData(null, "angus", "male", "UK12345678902")]
     [InlineData("UK12345678901", "Holstein", "Female", "UK12345678901")]
     public async Task Filters_cattle_ignoring_case(string? earTag, string? breed, string? sex, string expectedEarTag)
     {

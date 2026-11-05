@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
 using LisFacadeApiBackend.Facade.Endpoints.Validators;
 using LisFacadeApiBackend.Facade.LIS.Animal;
 using LisFacadeApiBackend.Facade.LIS.Error;
@@ -24,7 +26,8 @@ public static class CattleEndpoints
             .Produces<LisErrors>(StatusCodes.Status403Forbidden)
             .Produces<LisErrors>(StatusCodes.Status404NotFound)
             .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
-            .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable);
+            .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
+            .AddOpenApiOperationTransformer(SetIntegerPagingParameters);
 
         group.MapGet("/{identifier}", GetAnimalByIdentifier)
             .WithName("GetByIdentifier")
@@ -39,11 +42,26 @@ public static class CattleEndpoints
 
     private sealed class EndpointLogCategory;
 
+    // page and pageSize are bound as strings so invalid values reach the validator, but the LIS contract types them as integers.
+    private static Task SetIntegerPagingParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        foreach (var parameter in operation.Parameters ?? [])
+        {
+            if (parameter.In == ParameterLocation.Query && parameter.Name is "page" or "pageSize" && parameter.Schema is OpenApiSchema schema)
+            {
+                schema.Type = JsonSchemaType.Integer;
+                schema.Format = "int32";
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static async Task<IResult> GetAnimals(
         [FromQuery] string? species,
         [FromQuery] string? siteIdentifier,
-        [FromQuery] int? page,
-        [FromQuery] int? pageSize,
+        [FromQuery] string? page,
+        [FromQuery] string? pageSize,
         [FromQuery] string? order,
         [FromQuery] string? sort,
         [FromServices] ITranslator<GetAnimalsRequest, GetAnimalsResponse?> translator,

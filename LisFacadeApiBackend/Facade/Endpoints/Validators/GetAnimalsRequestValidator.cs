@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using LisFacadeApiBackend.Facade.LIS.Enums;
 using LisFacadeApiBackend.Facade.LIS.Request;
 using LisFacadeApiBackend.Facade.Services.Cattle.Translators;
@@ -10,8 +11,8 @@ public static class GetAnimalsRequestValidator
     public static bool TryBuild(
         string? species,
         string? siteIdentifier,
-        int? page,
-        int? pageSize,
+        string? page,
+        string? pageSize,
         string? order,
         string? sort,
         [NotNullWhen(true)] out GetAnimalsRequest? request,
@@ -33,17 +34,38 @@ public static class GetAnimalsRequestValidator
             return false;
         }
 
-        var resolvedPage = page ?? 1;
-        if (resolvedPage < 1)
+        var resolvedPage = 1;
+        if (!string.IsNullOrWhiteSpace(page))
         {
-            error = "page must be greater than or equal to 1";
-            return false;
+            if (!TryParseInt(page, out resolvedPage))
+            {
+                error = "page must be a whole number";
+                return false;
+            }
+
+            if (resolvedPage < 1)
+            {
+                error = "page must be greater than or equal to 1";
+                return false;
+            }
         }
 
-        if (pageSize is < 1)
+        int? resolvedPageSize = null;
+        if (!string.IsNullOrWhiteSpace(pageSize))
         {
-            error = "pageSize must be greater than or equal to 1";
-            return false;
+            if (!TryParseInt(pageSize, out var parsedPageSize))
+            {
+                error = "pageSize must be a whole number";
+                return false;
+            }
+
+            if (parsedPageSize < 1)
+            {
+                error = "pageSize must be greater than or equal to 1";
+                return false;
+            }
+
+            resolvedPageSize = parsedPageSize;
         }
 
         var resolvedOrder = AnimalOrder.AnimalIdentifier;
@@ -78,10 +100,13 @@ public static class GetAnimalsRequestValidator
             Species = parsedSpecies.Value,
             SiteIdentifier = siteIdentifier,
             Page = resolvedPage,
-            PageSize = pageSize,
+            PageSize = resolvedPageSize,
             Order = resolvedOrder,
             Sort = resolvedSort
         };
         return true;
     }
+
+    private static bool TryParseInt(string value, out int result) =>
+        int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out result);
 }
