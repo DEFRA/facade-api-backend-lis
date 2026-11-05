@@ -85,6 +85,14 @@ This write-up covers the open issues, assumptions and trade-offs in the `GET /an
 
 **Issue:** The published schema says `integer`, but the runtime accepts any string. A client that relies on the schema for validation will not see a 400 for a non-integer value; it receives a 404 instead. The LIS contract documents no 400 for this operation, so this follows the existing 404 decision in section 1. Values with surrounding whitespace, such as `page=%205`, are also rejected because `TryParseInt` does not allow whitespace.
 
+## 9. `species` and `siteIdentifier` are required
+
+**Where:** [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), `GetAnimals` parameters and `SetRequiredSiteParameters`. Validation is in [GetAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/GetAnimalsRequestValidator.cs), `TryBuild`.
+
+**Decision:** Both parameters are required in the OpenAPI document (`"required": true`). At runtime they are bound as `string?`, the same as `page` and `pageSize`, so a missing or blank value reaches the validator and returns the 404 LisErrors response from section 1 rather than a framework 400. `species` must also parse to a known species, so `species=pigs` returns 404, while `species=cattle` continues to the translator.
+
+**Issue:** The OpenAPI document says the parameters are required, but the runtime does not enforce that with a 400. A client that relies on the schema will see a 404 for a missing parameter, as with section 8. Making them non-nullable would give a 400 instead, which LIS does not document for this operation.
+
 ## Summary
 
 | # | Area | Risk | Action needed |
@@ -97,3 +105,4 @@ This write-up covers the open issues, assumptions and trade-offs in the `GET /an
 | 6 | Invalid sex skipped | Silent data omission; `Count` excludes skipped animals | Verify against contacts |
 | 7 | Field nullability | Partial mapping; species is hard-coded | N/A, current mapping is best we can provide |
 | 8 | `page` and `pageSize` as strings | Schema says `integer`, but non-integers return 404 rather than 400 | N/A, intentional; revisit if LIS documents a 400 |
+| 9 | `species` and `siteIdentifier` required | Schema says required, but missing values return 404 rather than 400 | N/A, intentional; same trade-off as section 8 |

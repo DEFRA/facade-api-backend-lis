@@ -27,7 +27,8 @@ public static class CattleEndpoints
             .Produces<LisErrors>(StatusCodes.Status404NotFound)
             .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
             .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
-            .AddOpenApiOperationTransformer(SetIntegerPagingParameters);
+            .AddOpenApiOperationTransformer(SetIntegerPagingParameters)
+            .AddOpenApiOperationTransformer(SetRequiredSiteParameters);
 
         group.MapGet("/{identifier}", GetAnimalByIdentifier)
             .WithName("GetByIdentifier")
@@ -42,7 +43,6 @@ public static class CattleEndpoints
 
     private sealed class EndpointLogCategory;
 
-    // page and pageSize are bound as strings so invalid values reach the validator, but the LIS contract types them as integers.
     private static Task SetIntegerPagingParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
         foreach (var parameter in operation.Parameters ?? [])
@@ -51,6 +51,19 @@ public static class CattleEndpoints
             {
                 schema.Type = JsonSchemaType.Integer;
                 schema.Format = "int32";
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task SetRequiredSiteParameters(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        foreach (var parameter in operation.Parameters ?? [])
+        {
+            if (parameter.In == ParameterLocation.Query && parameter.Name is "species" or "siteIdentifier" && parameter is OpenApiParameter concrete)
+            {
+                concrete.Required = true;
             }
         }
 
