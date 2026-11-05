@@ -26,6 +26,17 @@ public class GetAnimalsTranslator(
             return null;
         }
 
+        var summaries = BuildSummaries(cattle);
+        var ordered = SortSummaries(summaries, inboundRequest);
+
+        var total = summaries.Count;
+        var values = Paginate(ordered, total, inboundRequest);
+
+        return new GetAnimalsResponse { Count = total, Values = values };
+    }
+
+    private List<AnimalSummary> BuildSummaries(IEnumerable<CattleResponse> cattle)
+    {
         var summaries = new List<AnimalSummary>();
         foreach (var animal in cattle)
         {
@@ -39,14 +50,27 @@ public class GetAnimalsTranslator(
             summaries.Add(summary);
         }
 
+        return summaries;
+    }
+
+    private static IOrderedEnumerable<AnimalSummary> SortSummaries(
+        IEnumerable<AnimalSummary> summaries,
+        GetAnimalsRequest inboundRequest)
+    {
         Func<AnimalSummary, string?> sortKey = inboundRequest.Order == AnimalOrder.State
             ? summary => summary.Animal?.State?.ToString()
             : summary => summary.Animal?.Identifier;
-        var ordered = string.Equals(inboundRequest.Sort, "desc", StringComparison.OrdinalIgnoreCase)
+
+        return string.Equals(inboundRequest.Sort, "desc", StringComparison.OrdinalIgnoreCase)
             ? summaries.OrderByDescending(sortKey, StringComparer.OrdinalIgnoreCase)
             : summaries.OrderBy(sortKey, StringComparer.OrdinalIgnoreCase);
+    }
 
-        var total = summaries.Count;
+    private List<AnimalSummary> Paginate(
+        IEnumerable<AnimalSummary> ordered,
+        int total,
+        GetAnimalsRequest inboundRequest)
+    {
         var pageSize = inboundRequest.PageSize ?? total;
         var skip = (long)(inboundRequest.Page - 1) * pageSize;
         if (skip > 0 && skip >= total)
@@ -56,11 +80,9 @@ public class GetAnimalsTranslator(
                 inboundRequest.Page, pageSize, total, inboundRequest.SiteIdentifier);
         }
 
-        var values = skip >= total
+        return skip >= total
             ? []
             : ordered.Skip((int)skip).Take(pageSize).ToList();
-
-        return new GetAnimalsResponse { Count = total, Values = values };
     }
 
     private static AnimalSummary? ToSummary(CattleResponse cattle)
