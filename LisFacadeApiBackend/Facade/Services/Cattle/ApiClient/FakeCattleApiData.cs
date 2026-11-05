@@ -193,7 +193,7 @@ public static class FakeCattleApiData
                     Breed = "Holstein",
                     BreedCode = "HOL",
                     BreedName = "Holstein Friesian",
-                    Status = "Alive"
+                    Status = "registered"
                 },
                 new()
                 {
@@ -204,7 +204,95 @@ public static class FakeCattleApiData
                     Breed = "Angus",
                     BreedCode = "ANG",
                     BreedName = "Aberdeen Angus",
-                    Status = "Alive"
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678903",
+                    DateBirth = new DateOnly(2022, 5, 20),
+                    DateOnCph = new DateOnly(2022, 6, 2),
+                    Sex = "Female",
+                    Breed = "Jersey",
+                    BreedCode = "JER",
+                    BreedName = "Jersey",
+                    Status = "dead"
+                },
+                new()
+                {
+                    EarTag = "UK12345678904",
+                    DateBirth = new DateOnly(2023, 3, 8),
+                    DateOnCph = new DateOnly(2023, 4, 1),
+                    Sex = "Male",
+                    Breed = "Charolais",
+                    BreedCode = "CHA",
+                    BreedName = "Charolais",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678905",
+                    DateBirth = new DateOnly(2024, 7, 12),
+                    DateOnCph = new DateOnly(2024, 8, 1),
+                    Sex = "Female",
+                    Breed = "Hereford",
+                    BreedCode = "HER",
+                    BreedName = "Hereford",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678906",
+                    DateBirth = new DateOnly(2025, 1, 30),
+                    DateOnCph = new DateOnly(2025, 2, 14),
+                    Sex = "Male",
+                    Breed = "Limousin",
+                    BreedCode = "LIM",
+                    BreedName = "Limousin",
+                    Status = "lost"
+                },
+                new()
+                {
+                    EarTag = "UK12345678907",
+                    DateBirth = new DateOnly(2021, 9, 5),
+                    DateOnCph = new DateOnly(2021, 10, 18),
+                    Sex = "Female",
+                    Breed = "Simmental",
+                    BreedCode = "SIM",
+                    BreedName = "Simmental",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678908",
+                    DateBirth = new DateOnly(2024, 4, 22),
+                    DateOnCph = new DateOnly(2024, 5, 9),
+                    Sex = "Male",
+                    Breed = "Belgian Blue",
+                    BreedCode = "BEL",
+                    BreedName = "Belgian Blue",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678909",
+                    DateBirth = new DateOnly(2023, 12, 1),
+                    DateOnCph = new DateOnly(2024, 1, 6),
+                    Sex = "Female",
+                    Breed = "Ayrshire",
+                    BreedCode = "AYR",
+                    BreedName = "Ayrshire",
+                    Status = "stolen"
+                },
+                new()
+                {
+                    EarTag = "UK12345678910",
+                    DateBirth = new DateOnly(2022, 8, 17),
+                    DateOnCph = new DateOnly(2022, 9, 3),
+                    Sex = "Male",
+                    Breed = "Dexter",
+                    BreedCode = "DEX",
+                    BreedName = "Dexter",
+                    Status = "registered"
                 }
             ]
             : [];
