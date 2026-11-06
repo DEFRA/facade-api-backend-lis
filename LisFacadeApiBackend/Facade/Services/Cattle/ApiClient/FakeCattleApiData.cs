@@ -57,6 +57,170 @@ public static class FakeCattleApiData
                 SurrogateDamEarTag = "UK12345678811",
                 SireEarTag = "UK12345678710",
                 SireName = "Fake Sire Two"
+            },
+            ["UK12345678903"] = new()
+            {
+                EarTag = "UK12345678903",
+                Species = "Cattle",
+                Sex = "Female",
+                DateBirth = new DateOnly(2022, 5, 20),
+                DateRegistered = new DateOnly(2022, 6, 2),
+                DateOnCph = new DateOnly(2022, 6, 2),
+                Breed = "Jersey",
+                BreedCode = "JER",
+                BreedName = "Jersey",
+                State = "dead",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "98/765/4321", SubIdentifier = "01", FullIdentifier = "98/765/4321/01", Name = "Fake Abattoir", PremisesType = "Abattoir" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DeathLocation = new() { Identifier = "98/765/4321", SubIdentifier = "01", FullIdentifier = "98/765/4321/01", Name = "Fake Abattoir", PremisesType = "Abattoir" },
+                DamType = "Genetic",
+                GeneticDamEarTag = "UK12345678803",
+                SireEarTag = "UK12345678703",
+                SireName = "Fake Sire Three"
+            },
+            ["UK12345678904"] = new()
+            {
+                EarTag = "UK12345678904",
+                Species = "Cattle",
+                Sex = "Male",
+                DateBirth = new DateOnly(2023, 3, 8),
+                DateRegistered = new DateOnly(2023, 4, 1),
+                DateOnCph = new DateOnly(2023, 4, 1),
+                Breed = "Charolais",
+                BreedCode = "CHA",
+                BreedName = "Charolais",
+                State = "registered",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Surrogate",
+                GeneticDamEarTag = "UK12345678814",
+                SurrogateDamEarTag = "UK12345678804",
+                SireEarTag = "UK12345678704",
+                SireName = "Fake Sire Four"
+            },
+            ["UK12345678905"] = new()
+            {
+                EarTag = "UK12345678905",
+                Species = "Cattle",
+                Sex = "Female",
+                DateBirth = new DateOnly(2024, 7, 12),
+                DateRegistered = new DateOnly(2024, 8, 1),
+                DateOnCph = new DateOnly(2024, 8, 1),
+                Breed = "Hereford",
+                BreedCode = "HER",
+                BreedName = "Hereford",
+                State = "registered",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Genetic",
+                GeneticDamEarTag = "UK12345678805",
+                SireEarTag = "UK12345678705",
+                SireName = "Fake Sire Five"
+            },
+            ["UK12345678906"] = new()
+            {
+                EarTag = "UK12345678906",
+                Species = "Cattle",
+                Sex = "Male",
+                DateBirth = new DateOnly(2025, 1, 30),
+                DateRegistered = new DateOnly(2025, 2, 14),
+                DateOnCph = new DateOnly(2025, 2, 14),
+                Breed = "Limousin",
+                BreedCode = "LIM",
+                BreedName = "Limousin",
+                State = "lost",
+                RestrictionStatus = "Under investigation",
+                CurrentLocation = null,
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Genetic",
+                GeneticDamEarTag = "UK12345678806",
+                SireEarTag = "UK12345678706",
+                SireName = "Fake Sire Six"
+            },
+            ["UK12345678907"] = new()
+            {
+                EarTag = "UK12345678907",
+                Species = "Cattle",
+                Sex = "Female",
+                DateBirth = new DateOnly(2021, 9, 5),
+                DateRegistered = new DateOnly(2021, 10, 18),
+                DateOnCph = new DateOnly(2021, 10, 18),
+                Breed = "Simmental",
+                BreedCode = "SIM",
+                BreedName = "Simmental",
+                State = "registered",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Surrogate",
+                GeneticDamEarTag = "UK12345678817",
+                SurrogateDamEarTag = "UK12345678807",
+                SireEarTag = "UK12345678707",
+                SireName = "Fake Sire Seven"
+            },
+            ["UK12345678908"] = new()
+            {
+                EarTag = "UK12345678908",
+                Species = "Cattle",
+                Sex = "Male",
+                DateBirth = new DateOnly(2024, 4, 22),
+                DateRegistered = new DateOnly(2024, 5, 9),
+                DateOnCph = new DateOnly(2024, 5, 9),
+                Breed = "Belgian Blue",
+                BreedCode = "BEL",
+                BreedName = "Belgian Blue",
+                State = "registered",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Genetic",
+                GeneticDamEarTag = "UK12345678808",
+                SireEarTag = "UK12345678708",
+                SireName = "Fake Sire Eight"
+            },
+            ["UK12345678909"] = new()
+            {
+                EarTag = "UK12345678909",
+                Species = "Cattle",
+                Sex = "Female",
+                DateBirth = new DateOnly(2023, 12, 1),
+                DateRegistered = new DateOnly(2024, 1, 6),
+                DateOnCph = new DateOnly(2024, 1, 6),
+                Breed = "Ayrshire",
+                BreedCode = "AYR",
+                BreedName = "Ayrshire",
+                State = "stolen",
+                RestrictionStatus = "Reported stolen",
+                CurrentLocation = null,
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Genetic",
+                GeneticDamEarTag = "UK12345678809",
+                SireEarTag = "UK12345678709",
+                SireName = "Fake Sire Nine"
+            },
+            ["UK12345678910"] = new()
+            {
+                EarTag = "UK12345678910",
+                Species = "Cattle",
+                Sex = "Male",
+                DateBirth = new DateOnly(2022, 8, 17),
+                DateRegistered = new DateOnly(2022, 9, 3),
+                DateOnCph = new DateOnly(2022, 9, 3),
+                Breed = "Dexter",
+                BreedCode = "DEX",
+                BreedName = "Dexter",
+                State = "registered",
+                RestrictionStatus = "None",
+                CurrentLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                RegisteredLocation = new() { Identifier = "12/345/6789", SubIdentifier = "01", FullIdentifier = "12/345/6789/01", Name = "Fake Farm", PremisesType = "Farm" },
+                DamType = "Surrogate",
+                GeneticDamEarTag = "UK12345678840",
+                SurrogateDamEarTag = "UK12345678830",
+                SireEarTag = "UK12345678730",
+                SireName = "Fake Sire Ten"
             }
         };
 
@@ -193,7 +357,7 @@ public static class FakeCattleApiData
                     Breed = "Holstein",
                     BreedCode = "HOL",
                     BreedName = "Holstein Friesian",
-                    Status = "Alive"
+                    Status = "registered"
                 },
                 new()
                 {
@@ -204,7 +368,95 @@ public static class FakeCattleApiData
                     Breed = "Angus",
                     BreedCode = "ANG",
                     BreedName = "Aberdeen Angus",
-                    Status = "Alive"
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678903",
+                    DateBirth = new DateOnly(2022, 5, 20),
+                    DateOnCph = new DateOnly(2022, 6, 2),
+                    Sex = "Female",
+                    Breed = "Jersey",
+                    BreedCode = "JER",
+                    BreedName = "Jersey",
+                    Status = "dead"
+                },
+                new()
+                {
+                    EarTag = "UK12345678904",
+                    DateBirth = new DateOnly(2023, 3, 8),
+                    DateOnCph = new DateOnly(2023, 4, 1),
+                    Sex = "Male",
+                    Breed = "Charolais",
+                    BreedCode = "CHA",
+                    BreedName = "Charolais",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678905",
+                    DateBirth = new DateOnly(2024, 7, 12),
+                    DateOnCph = new DateOnly(2024, 8, 1),
+                    Sex = "Female",
+                    Breed = "Hereford",
+                    BreedCode = "HER",
+                    BreedName = "Hereford",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678906",
+                    DateBirth = new DateOnly(2025, 1, 30),
+                    DateOnCph = new DateOnly(2025, 2, 14),
+                    Sex = "Male",
+                    Breed = "Limousin",
+                    BreedCode = "LIM",
+                    BreedName = "Limousin",
+                    Status = "lost"
+                },
+                new()
+                {
+                    EarTag = "UK12345678907",
+                    DateBirth = new DateOnly(2021, 9, 5),
+                    DateOnCph = new DateOnly(2021, 10, 18),
+                    Sex = "Female",
+                    Breed = "Simmental",
+                    BreedCode = "SIM",
+                    BreedName = "Simmental",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678908",
+                    DateBirth = new DateOnly(2024, 4, 22),
+                    DateOnCph = new DateOnly(2024, 5, 9),
+                    Sex = "Male",
+                    Breed = "Belgian Blue",
+                    BreedCode = "BEL",
+                    BreedName = "Belgian Blue",
+                    Status = "registered"
+                },
+                new()
+                {
+                    EarTag = "UK12345678909",
+                    DateBirth = new DateOnly(2023, 12, 1),
+                    DateOnCph = new DateOnly(2024, 1, 6),
+                    Sex = "Female",
+                    Breed = "Ayrshire",
+                    BreedCode = "AYR",
+                    BreedName = "Ayrshire",
+                    Status = "stolen"
+                },
+                new()
+                {
+                    EarTag = "UK12345678910",
+                    DateBirth = new DateOnly(2022, 8, 17),
+                    DateOnCph = new DateOnly(2022, 9, 3),
+                    Sex = "Male",
+                    Breed = "Dexter",
+                    BreedCode = "DEX",
+                    BreedName = "Dexter",
+                    Status = "registered"
                 }
             ]
             : [];

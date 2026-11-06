@@ -20,13 +20,13 @@ public class GetCattleForHoldingAsyncUnitTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-        Assert.Equal(2, cattle!.Count);
+        Assert.Equal(10, cattle!.Count);
     }
 
     [Theory]
     [InlineData("uk12345678902", null, null, "UK12345678902")]
     [InlineData(null, "angus", null, "UK12345678902")]
-    [InlineData(null, null, "FEMALE", "UK12345678901")]
+    [InlineData(null, "holstein", "FEMALE", "UK12345678901")]
     public async Task Filters_cattle_ignoring_case(string? earTag, string? breed, string? sex, string expectedEarTag)
     {
         var client = new FakeCattleApiClient();

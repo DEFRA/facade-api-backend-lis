@@ -17,6 +17,29 @@ public class GetAnimalByIdentifierIntegrationTests
     private const string CattleApiBaseUrl = "http://cattle-api.test/";
     private const string ApiKey = "test-api-key";
 
+    [Theory]
+    [InlineData("UK12345678901")]
+    [InlineData("UK12345678902")]
+    [InlineData("UK12345678903")]
+    [InlineData("UK12345678904")]
+    [InlineData("UK12345678905")]
+    [InlineData("UK12345678906")]
+    [InlineData("UK12345678907")]
+    [InlineData("UK12345678908")]
+    [InlineData("UK12345678909")]
+    [InlineData("UK12345678910")]
+    public async Task Get_returns_200_for_every_seeded_fake_identifier(string identifier)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var client = sharedFactory.CreateClient();
+
+        var response = await client.GetAsync($"/animals/{identifier}", cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var animal = await response.Content.ReadFromJsonAsync<Animal>(cancellationToken);
+        Assert.Equal(identifier, animal!.AnimalDetails.Identifier);
+    }
+
     [Fact]
     public async Task Get_returns_200_with_translated_animal_for_known_identifier()
     {

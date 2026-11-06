@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using LisFacadeApiBackend.Facade.Cattle.Error;
 using LisFacadeApiBackend.Facade.Cattle.Response.Cattle;
+using LisFacadeApiBackend.Facade.Cattle.Response.Holding;
 using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,6 +85,24 @@ public class GetCattleDetailsAsyncUnitTests
 
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => client.GetCattleDetailsAsync("UK12345678901", cts.Token));
+    }
+
+    [Fact]
+    public async Task Returns_ok_for_every_animal_listed_for_holding()
+    {
+        var client = new FakeCattleApiClient();
+
+        using var listResponse = await client.GetCattleForHoldingMultiSegmentAsync("12", "345", "6789", null, null, null, CancellationToken.None);
+        var listed = await listResponse.Content.ReadFromJsonAsync<List<CattleResponse>>(cancellationToken: TestContext.Current.CancellationToken);
+
+        foreach (var earTag in listed!.Select(c => c.EarTag))
+        {
+            using var response = await client.GetCattleDetailsAsync(earTag, CancellationToken.None);
+            var cattle = await response.Content.ReadFromJsonAsync<CattleDetailsResponse>(cancellationToken: TestContext.Current.CancellationToken);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(earTag, cattle!.EarTag);
+        }
     }
 
     [Fact]
