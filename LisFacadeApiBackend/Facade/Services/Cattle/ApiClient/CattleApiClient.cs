@@ -1,14 +1,33 @@
+using System.Net;
 using LisFacadeApiBackend.Facade.Cattle.Request;
 
 namespace LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 
-public sealed class CattleApiClient(HttpClient httpClient) : ICattleApiClient
+public sealed class CattleApiClient(HttpClient httpClient, ILogger<CattleApiClient> logger) : ICattleApiClient
 {
-    public async Task<HttpResponseMessage> GetCattleDetailsAsync(
+    public Task<HttpResponseMessage> GetCattleDetailsAsync(
         string earTag,
         CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        ArgumentException.ThrowIfNullOrWhiteSpace(earTag);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        logger.LogDebug("Calling cattle API v1/cattle/ for {CattleIdentifier}", earTag);
+        return SendGetCattleDetailsAsync(earTag, cancellationToken);
+    }
+
+    // HttpClient.Timeout surfaces as TaskCanceledException even though the caller did not cancel.
+    // Map it to a gateway timeout so it is handled as an upstream failure rather than an unhandled cancellation.
+    private async Task<HttpResponseMessage> SendGetCattleDetailsAsync(string earTag, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await httpClient.GetAsync($"v1/cattle/{Uri.EscapeDataString(earTag)}", cancellationToken);
+        }
+        catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new HttpRequestException("Cattle API request timed out", ex, HttpStatusCode.GatewayTimeout);
+        }
     }
 
     public Task<HttpResponseMessage> SearchHoldingsAsync(

@@ -5,7 +5,7 @@ using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 namespace LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
 
 public class GetAnimalByIdentifierService(
-    [FromKeyedServices(CattleApiClientKeys.Fake)] ICattleApiClient cattleApi,
+    [FromKeyedServices(CattleApiClientKeys.Real)] ICattleApiClient cattleApi,
     ILogger<GetAnimalByIdentifierService> logger)
  {
      public async Task<CattleDetailsResponse?> GetAnimalByIdentifierAsync(string cattleIdentifier, CancellationToken cancellationToken)

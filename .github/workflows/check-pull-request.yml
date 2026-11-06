@@ -24,6 +24,8 @@ jobs:
       id-token: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CattleApi__ApiKey: ${{ secrets.CATTLEAPI__APIKEY }}
+      CattleApi__BaseUrl: ${{ secrets.CATTLEAPI__BASEURL }}
     steps:
       - name: Check out code
         uses: actions/checkout@v5
