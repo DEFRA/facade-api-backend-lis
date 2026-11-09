@@ -13,6 +13,12 @@ namespace LisFacadeApiBackend.Test.Facade.Services.Cattle.IntegrationTests.GetAn
 
 public class GetAnimalByIdentifierIntegrationTests
 {
+    private static readonly WebApplicationFactory<Program> s_fakeCattleFactory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        builder.ConfigureServices(services =>
+            services.AddKeyedSingleton<ICattleApiClient>(
+                CattleApiClientKeys.Real,
+                (sp, _) => sp.GetRequiredKeyedService<ICattleApiClient>(CattleApiClientKeys.Fake))));
+
     private const string KnownIdentifier = "UK111111111111";
     private const string CattleApiBaseUrl = "http://cattle-api.test/";
     private const string ApiKey = "test-api-key";
@@ -31,7 +37,7 @@ public class GetAnimalByIdentifierIntegrationTests
     public async Task Get_returns_200_for_every_seeded_fake_identifier(string identifier)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        using var client = sharedFactory.CreateClient();
+        using var client = s_fakeCattleFactory.CreateClient();
 
         var response = await client.GetAsync($"/animals/{identifier}", cancellationToken);
 
