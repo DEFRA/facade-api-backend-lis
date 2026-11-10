@@ -7,6 +7,7 @@ using LisFacadeApiBackend.Facade.LIS.Enums;
 using LisFacadeApiBackend.Facade.LIS.Error;
 using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LisFacadeApiBackend.Test.Facade.Services.Cattle.IntegrationTests.GetAnimalByIdentifier;
@@ -127,11 +128,13 @@ public class GetAnimalByIdentifierIntegrationTests
         var handler = new StubCattleApiHandler(_ => OkJson(FullyPopulatedCattle()));
         await using var factory = CreateFactory(handler, ApiKey);
         using var client = factory.CreateClient();
+        var configuredKey = factory.Services.GetRequiredService<IConfiguration>()["CattleApi:ApiKey"];
 
         await client.GetAsync($"/animals/{KnownIdentifier}", cancellationToken);
 
         var request = Assert.Single(handler.Requests);
-        Assert.Equal(ApiKey, Assert.Single(request.Headers.GetValues("x-api-key")));
+        Assert.False(string.IsNullOrWhiteSpace(configuredKey));
+        Assert.Equal(configuredKey, Assert.Single(request.Headers.GetValues("x-api-key")));
     }
 
     [Fact]
@@ -363,6 +366,7 @@ public class GetAnimalByIdentifierIntegrationTests
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseSetting("CattleApi:BaseUrl", CattleApiBaseUrl);
+            builder.UseSetting("CattleApi:ClientModes:GetAnimalByIdentifier", CattleApiClientKeys.Real);
             if (apiKey is not null)
             {
                 builder.UseSetting("CattleApi:ApiKey", apiKey);

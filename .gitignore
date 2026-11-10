@@ -267,3 +267,6 @@ __pycache__/
 
 library.db
 .envrc
+
+# Local-only settings containing secrets (CattleApi key)
+LisFacadeApiBackend/appsettings.Local.json

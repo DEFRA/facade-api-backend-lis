@@ -94,6 +94,35 @@ Swagger UI for the same specification is served at `http://localhost:8085/swagge
 
 The `/example` endpoints are excluded from the specification.
 
+### Feature flags
+
+Each endpoint is gated by a flag in the `FeatureManagement` section of `appsettings.json`:
+
+- `GetAnimals`
+- `GetAnimalByIdentifier`
+
+All flags default to `true`. Set a flag to `false` to disable its endpoint. Requests to a disabled endpoint return `404` with the standard LIS error body. A flag that is missing from configuration is treated as disabled.
+
+Environment variables override `appsettings.json`, so a value set in `cdp-app-config` takes precedence over the defaults in the file.
+
+### Cattle API client mode
+
+Each endpoint's cattle client is selected by the `CattleApi:ClientModes` section of `appsettings.json` (or the `CattleApi__ClientModes__<Endpoint>` environment variable):
+
+- `real` calls the upstream cattle API.
+- `fake` uses the in-process fake client.
+
+Values must match the `CattleApiClientKeys` names. Endpoints not listed default to `fake`. The mode is resolved per request, so edits to `appsettings.json` take effect without a restart. Keys are the endpoint names listed under feature flags above.
+
+In CDP environments, set these in the service's `cdp-app-config` file alongside the feature flags, in the same `KEY=value` format:
+
+```
+CattleApi__ClientModes__GetAnimals=real
+CattleApi__ClientModes__GetAnimalByIdentifier=fake
+```
+
+Environment variables override `appsettings.json`, so a value set in `cdp-app-config` takes precedence over the defaults in the file.
+
 ### SonarCloud
 
 Example SonarCloud configuration are available in the GitHub Action workflows.

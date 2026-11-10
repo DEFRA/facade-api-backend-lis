@@ -5,11 +5,13 @@ using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 namespace LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
 
 public class GetAnimalsService(
-    [FromKeyedServices(CattleApiClientKeys.Fake)] ICattleApiClient cattleApi,
+    ICattleApiClient cattleApi,
     ILogger<GetAnimalsService> logger)
 {
     public async Task<List<CattleResponse>?> GetAnimalsAsync(string siteIdentifier, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Running {implementation} for site GetAnimalAsync {SiteIdentifier}", cattleApi.GetType(), siteIdentifier);
+
         var segments = siteIdentifier.Split('/');
         if (segments.Length != 3 || segments.Any(string.IsNullOrWhiteSpace))
         {
