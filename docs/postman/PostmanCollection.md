@@ -26,6 +26,6 @@ If you wish to test against an environment, such as DEV, you will need to change
 
 Health Check (/health)
 
-Get Animals (/animals)
+Get Animals (/animals) (This endpoint has a list of test urls that can be used in the description)
 
 Get Animals by Identifier (/animals/{{identifier}})

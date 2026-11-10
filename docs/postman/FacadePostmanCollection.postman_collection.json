@@ -66,7 +66,7 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:8085/animals?siteIdentifier=12/345/6789",
+          "raw": "http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789",
           "protocol": "http",
           "host": [
             "localhost"
@@ -76,6 +76,10 @@
             "animals"
           ],
           "query": [
+            {
+               "key": "species",
+               "value": "cattle"
+            },
             {
               "key": "siteIdentifier",
               "value": "12/345/6789"

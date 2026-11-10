@@ -16,8 +16,8 @@ public class FeatureFlagIntegrationTests
     private const string KnownIdentifier = "UK111111111111";
 
     [Theory]
-    [InlineData("GetAnimals", "GET", "/animals", null)]
-    [InlineData("GetAnimalByIdentifier", "GET", "/animals/UK111111111111", null)]
+    [InlineData("GetAnimals", "GET", "/animals?species=cattle&siteIdentifier=12%2F345%2F6789", null)]
+    [InlineData("GetAnimalByIdentifier", "GET", "/animals/UK12345678901", null)]
     public async Task Returns_404_lis_error_when_endpoint_feature_flag_is_disabled(string flag, string method, string path, string? json)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
