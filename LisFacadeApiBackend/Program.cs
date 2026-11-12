@@ -161,6 +161,12 @@ static void ConfigureMiddleware(WebApplication app)
 {
     app.UseSerilogRequestLogging();
 
+    var traceHeader = app.Configuration.GetValue<string>("TraceHeader");
+    if (!string.IsNullOrWhiteSpace(traceHeader))
+    {
+        app.UseMiddleware<CorrelationIdMiddleware>(traceHeader);
+    }
+
     app.UseHeaderPropagation();
     app.UseMiddleware<FeatureFlagMiddleware>();
 }
