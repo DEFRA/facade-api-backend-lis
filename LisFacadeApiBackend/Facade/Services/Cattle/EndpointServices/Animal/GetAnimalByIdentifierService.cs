@@ -5,29 +5,30 @@ using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 namespace LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
 
 public class GetAnimalByIdentifierService(
-    [FromKeyedServices(CattleApiClientKeys.Real)] ICattleApiClient cattleApi,
+    ICattleApiClient cattleApi,
     ILogger<GetAnimalByIdentifierService> logger)
  {
      public async Task<CattleDetailsResponse?> GetAnimalByIdentifierAsync(string cattleIdentifier, CancellationToken cancellationToken)
      {
-         logger.LogDebug("Calling cattle API for {CattleIdentifier}", cattleIdentifier);
+        logger.LogInformation("Running {implementation} for cattle identifier GetAnimalByIdentifierAsync {CattleIdentifier}", 
+            cattleApi.GetType(), cattleIdentifier);
 
-         using var response = await cattleApi.GetCattleDetailsAsync(cattleIdentifier, cancellationToken);
-         if (response.StatusCode == HttpStatusCode.NotFound)
-         {
-             logger.LogDebug("Cattle API returned 404 for {CattleIdentifier}", cattleIdentifier);
-             return null;
-         }
+        using var response = await cattleApi.GetCattleDetailsAsync(cattleIdentifier, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            logger.LogDebug("Cattle API returned 404 for {CattleIdentifier}", cattleIdentifier);
+            return null;
+        }
 
-         if (!response.IsSuccessStatusCode)
-         {
-             var level = (int)response.StatusCode >= 500 ? LogLevel.Error : LogLevel.Warning;
-             logger.Log(level, "Cattle API returned {StatusCode} for {CattleIdentifier}", (int)response.StatusCode, cattleIdentifier);
-             response.EnsureSuccessStatusCode();
-         }
+        if (!response.IsSuccessStatusCode)
+        {
+            var level = (int)response.StatusCode >= 500 ? LogLevel.Error : LogLevel.Warning;
+            logger.Log(level, "Cattle API returned {StatusCode} for {CattleIdentifier}", (int)response.StatusCode, cattleIdentifier);
+            response.EnsureSuccessStatusCode();
+        }
 
-         var result = await response.Content.ReadFromJsonAsync<CattleDetailsResponse>(cancellationToken);
-         logger.LogDebug("Cattle API returned details for {CattleIdentifier}", cattleIdentifier);
-         return result;
+        var result = await response.Content.ReadFromJsonAsync<CattleDetailsResponse>(cancellationToken);
+        logger.LogDebug("Cattle API returned details for {CattleIdentifier}", cattleIdentifier);
+        return result;
      }
  }

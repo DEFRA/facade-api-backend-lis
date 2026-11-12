@@ -1,5 +1,6 @@
 using LisFacadeApiBackend.Facade;
 using LisFacadeApiBackend.Facade.Endpoints;
+using LisFacadeApiBackend.Facade.FeatureFlags;
 using LisFacadeApiBackend.Facade.Services;
 using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 using LisFacadeApiBackend.Config;
@@ -10,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using LisFacadeApiBackend.Utils.Logging;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.FeatureManagement;
 using MongoDB.Driver;
 using MongoDB.Driver.Authentication.AWS;
 using Serilog;
@@ -37,6 +39,11 @@ static WebApplication BuildApp(string[] args)
 [ExcludeFromCodeCoverage]
 static void ConfigureHost(WebApplicationBuilder builder)
 {
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+    }
+
     builder.Host.UseSerilog(CdpLogging.Configuration);
 }
 
@@ -57,11 +64,12 @@ static void ConfigureServices(WebApplicationBuilder builder)
     services.AddHttpContextAccessor();
 
     ConfigureHeaderPropagation(services, configuration);
-    ConfigureHttpClients(services);
+    ConfigureHttpClients(services, configuration);
     ConfigureMongo(services, configuration);
 
     services.AddHealthChecks();
     services.AddOpenApi();
+    services.AddFeatureManagement();
 
     // App services
     services.AddSingleton<IExamplePersistence, ExamplePersistence>();
@@ -83,7 +91,7 @@ static void ConfigureHeaderPropagation(IServiceCollection services, IConfigurati
 }
 
 [ExcludeFromCodeCoverage]
-static void ConfigureHttpClients(IServiceCollection services)
+static void ConfigureHttpClients(IServiceCollection services, IConfiguration configuration)
 {
     services.AddSingleton<FakeCattleApiClient>();
     services.AddHttpClientWithTracing<CattleApiClient, CattleApiClient>()
@@ -113,6 +121,9 @@ static void ConfigureHttpClients(IServiceCollection services)
     services.AddKeyedTransient<ICattleApiClient>(
         CattleApiClientKeys.Real,
         (sp, _) => sp.GetRequiredService<CattleApiClient>());
+
+    services.AddOptions<CattleApiOptions>()
+        .Bind(configuration.GetSection(CattleApiOptions.SectionName));
 }
 
 [ExcludeFromCodeCoverage]
@@ -151,6 +162,7 @@ static void ConfigureMiddleware(WebApplication app)
     app.UseSerilogRequestLogging();
 
     app.UseHeaderPropagation();
+    app.UseMiddleware<FeatureFlagMiddleware>();
 }
 
 [ExcludeFromCodeCoverage]

@@ -16,8 +16,6 @@ public sealed class CattleApiClient(HttpClient httpClient, ILogger<CattleApiClie
         return SendGetCattleDetailsAsync(earTag, cancellationToken);
     }
 
-    // HttpClient.Timeout surfaces as TaskCanceledException even though the caller did not cancel.
-    // Map it to a gateway timeout so it is handled as an upstream failure rather than an unhandled cancellation.
     private async Task<HttpResponseMessage> SendGetCattleDetailsAsync(string earTag, CancellationToken cancellationToken)
     {
         try

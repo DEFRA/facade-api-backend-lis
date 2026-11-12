@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using LisFacadeApiBackend.Facade.Endpoints.Validators;
+using LisFacadeApiBackend.Facade.FeatureFlags;
 using LisFacadeApiBackend.Facade.LIS.Animal;
 using LisFacadeApiBackend.Facade.LIS.Error;
 using LisFacadeApiBackend.Facade.LIS.Request;
@@ -28,7 +29,8 @@ public static class CattleEndpoints
             .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
             .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
             .AddOpenApiOperationTransformer(SetIntegerPagingParameters)
-            .AddOpenApiOperationTransformer(SetRequiredSiteParameters);
+            .AddOpenApiOperationTransformer(SetRequiredSiteParameters)
+            .RequireFeatureFlag(FeatureFlagNames.GetAnimals);
 
         group.MapGet("/{identifier}", GetAnimalByIdentifier)
             .WithName("GetByIdentifier")
@@ -36,7 +38,8 @@ public static class CattleEndpoints
             .Produces<LisErrors>(StatusCodes.Status403Forbidden)
             .Produces<LisErrors>(StatusCodes.Status404NotFound)
             .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
-            .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable);
+            .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
+            .RequireFeatureFlag(FeatureFlagNames.GetAnimalByIdentifier);
 
         return group;
     }

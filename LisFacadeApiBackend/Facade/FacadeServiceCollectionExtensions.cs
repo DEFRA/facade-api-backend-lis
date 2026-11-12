@@ -1,6 +1,8 @@
+using LisFacadeApiBackend.Facade.FeatureFlags;
 using LisFacadeApiBackend.Facade.LIS.Animal;
 using LisFacadeApiBackend.Facade.LIS.Request;
 using LisFacadeApiBackend.Facade.LIS.Response;
+using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 using LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
 using LisFacadeApiBackend.Facade.Services.Cattle.Translators;
 using LisFacadeApiBackend.Facade.Services.Cattle.Translators.Animal;
@@ -27,8 +29,10 @@ public static class FacadeServiceCollectionExtensions
 
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.AddTransient<GetAnimalByIdentifierService>();
-        services.AddTransient<GetAnimalsService>();
+        services.AddTransient(sp => ActivatorUtilities.CreateInstance<GetAnimalByIdentifierService>(
+            sp, sp.ResolveCattleApiClient(FeatureFlagNames.GetAnimalByIdentifier)));
+        services.AddTransient(sp => ActivatorUtilities.CreateInstance<GetAnimalsService>(
+            sp, sp.ResolveCattleApiClient(FeatureFlagNames.GetAnimals)));
 
         return services;
     }

@@ -31,7 +31,7 @@
       "response": []
     },
     {
-      "name": "Get Animal By Identifier Copy",
+      "name": "Get Animal By Identifier",
       "request": {
         "method": "GET",
         "header": [
@@ -52,6 +52,41 @@
             "{{identifier}}"
           ]
         }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Animals",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-api-key",
+            "value": "{{x-api-key}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8085",
+          "path": [
+            "animals"
+          ],
+          "query": [
+            {
+               "key": "species",
+               "value": "cattle"
+            },
+            {
+              "key": "siteIdentifier",
+              "value": "12/345/6789"
+            }
+          ]
+        },
+        "description": "# Test queries\n\n### Happy Path\n\nExisting CPH\n\n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789)\n\nHolding with no cattle  \n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=23/456/7890](http://localhost:8085/animals?species=cattle&siteIdentifier=23/456/7890)\n\n### Paging, ordering and sorting\n\n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789&amp;page=1&amp;pageSize=2](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789&page=1&pageSize=2)  \n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789&amp;order=state&amp;sort=desc](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789&order=state&sort=desc)  \n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789&amp;order=animalIdentifier&amp;sort=asc](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789&order=animalIdentifier&sort=asc)\n\n### Non-cattle species\n\n[http://localhost:8085/animals?species=sheep&amp;siteIdentifier=12/345/6789](http://localhost:8085/animals?species=pigs&siteIdentifier=12/345/6789)\n\n### Not found\n\n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=99/999/9999](http://localhost:8085/animals?species=cattle&siteIdentifier=99/999/9999)\n\n### Invalid Input\n\n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12-345-6789](http://localhost:8085/animals?species=cattle&siteIdentifier=12-345-6789)  \n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789&amp;page=0](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789&page=0)  \n[http://localhost:8085/animals?species=cattle&amp;siteIdentifier=12/345/6789&amp;order=earTag](http://localhost:8085/animals?species=cattle&siteIdentifier=12/345/6789&order=ear)"
       },
       "response": []
     }
