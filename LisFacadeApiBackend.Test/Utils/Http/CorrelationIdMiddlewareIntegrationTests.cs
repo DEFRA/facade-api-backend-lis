@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text;
 using LisFacadeApiBackend.Facade.Services.Cattle.ApiClient;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,6 +68,19 @@ public class CorrelationIdMiddlewareIntegrationTests
         Assert.Equal(callerRequestId, Assert.Single(upstreamRequest.Headers.GetValues(RequestIdHeader)));
     }
 
+    [Fact]
+    public async Task Get_list_without_request_id_returns_animals()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new StubCattleApiHandler();
+        await using var factory = CreateFactory(handler);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync(ListPath, cancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(StubCattleApiHandler handler) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -92,8 +106,9 @@ public class CorrelationIdMiddlewareIntegrationTests
             var hasRequestId = request.Headers.TryGetValues(RequestIdHeader, out var values)
                 && values.Any(value => !string.IsNullOrWhiteSpace(value));
 
-            return Task.FromResult(new HttpResponseMessage(
-                hasRequestId ? HttpStatusCode.NotFound : HttpStatusCode.BadRequest));
+            return Task.FromResult(hasRequestId
+                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]", Encoding.UTF8, "application/json") }
+                : new HttpResponseMessage(HttpStatusCode.BadRequest));
         }
     }
 }

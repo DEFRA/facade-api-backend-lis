@@ -21,6 +21,7 @@ public class GetAnimalsIntegrationTests
     private const string CattleApiBaseUrl = "http://cattle-api.test/";
     private const string ApiKey = "test-api-key";
     private const string HoldingPath = "/v1/holdings/28/822/2977/cattle";
+    private const string RequestIdHeader = "x-cdp-request-id";
 
     [Fact]
     public async Task Get_returns_200_with_count_and_mapped_values_for_site_fake_client()
@@ -653,7 +654,17 @@ public class GetAnimalsIntegrationTests
             CancellationToken cancellationToken)
         {
             Requests.Add(request);
+
+            if (!HasNonBlankRequestId(request))
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest));
+            }
+
             return Task.FromResult(respond(request));
         }
+
+        private static bool HasNonBlankRequestId(HttpRequestMessage request) =>
+            request.Headers.TryGetValues(RequestIdHeader, out var values)
+            && values.Any(value => !string.IsNullOrWhiteSpace(value));
     }
 }
