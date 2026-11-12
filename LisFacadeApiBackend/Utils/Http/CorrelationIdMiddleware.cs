@@ -4,7 +4,8 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next, string headerN
 {
     public Task InvokeAsync(HttpContext context)
     {
-        if (string.IsNullOrWhiteSpace(context.Request.Headers[headerName].ToString()))
+        var values = context.Request.Headers[headerName];
+        if (values.Count != 1 || string.IsNullOrWhiteSpace(values[0]))
         {
             context.Request.Headers[headerName] = Guid.NewGuid().ToString();
         }

@@ -68,6 +68,25 @@ public class CorrelationIdMiddlewareIntegrationTests
         Assert.Equal(callerRequestId, Assert.Single(upstreamRequest.Headers.GetValues(RequestIdHeader)));
     }
 
+    [Theory]
+    [InlineData(AnimalPath)]
+    [InlineData(ListPath)]
+    public async Task Get_replaces_repeated_request_id_with_single_generated_id(string path)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new StubCattleApiHandler();
+        await using var factory = CreateFactory(handler);
+        using var client = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        request.Headers.Add(RequestIdHeader, "caller-one");
+        request.Headers.Add(RequestIdHeader, "caller-two");
+
+        await client.SendAsync(request, cancellationToken);
+
+        var upstreamRequest = Assert.Single(handler.Requests);
+        Assert.True(Guid.TryParse(Assert.Single(upstreamRequest.Headers.GetValues(RequestIdHeader)), out _));
+    }
+
     [Fact]
     public async Task Get_list_without_request_id_returns_animals()
     {
@@ -104,7 +123,8 @@ public class CorrelationIdMiddlewareIntegrationTests
             Requests.Add(request);
 
             var hasRequestId = request.Headers.TryGetValues(RequestIdHeader, out var values)
-                && values.Any(value => !string.IsNullOrWhiteSpace(value));
+                && values.Count() == 1
+                && !string.IsNullOrWhiteSpace(values.Single());
 
             return Task.FromResult(hasRequestId
                 ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]", Encoding.UTF8, "application/json") }

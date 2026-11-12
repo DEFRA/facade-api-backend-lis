@@ -557,6 +557,9 @@ public class GetAnimalsIntegrationTests
     [InlineData("12345")]
     [InlineData("28/822")]
     [InlineData("28//2977")]
+    [InlineData("28/../2977")]
+    [InlineData("28/822/.")]
+    [InlineData("../822/2977")]
     public async Task Get_returns_404_lis_error_for_malformed_site_identifier_without_calling_cattle_api_client(string siteIdentifier)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

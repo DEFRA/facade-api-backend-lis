@@ -13,7 +13,7 @@ public class GetAnimalsService(
         logger.LogInformation("Running {implementation} for site GetAnimalAsync {SiteIdentifier}", cattleApi.GetType(), siteIdentifier);
 
         var segments = siteIdentifier.Split('/');
-        if (segments.Length != 3 || segments.Any(string.IsNullOrWhiteSpace))
+        if (segments.Length != 3 || segments.Any(s => string.IsNullOrWhiteSpace(s) || s is "." or ".."))
         {
             logger.LogDebug("Site identifier {SiteIdentifier} is not in county/parish/holding format", siteIdentifier);
             return null;
