@@ -35,7 +35,7 @@ public class GetAnimalByIdentifierIntegrationTests
     [InlineData("UK12345678908")]
     [InlineData("UK12345678909")]
     [InlineData("UK12345678910")]
-    public async Task Get_returns_200_for_every_seeded_fake_identifier(string identifier)
+    public async Task Get_returns_200_for_every_seeded_identifier_fake_client(string identifier)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         using var client = s_fakeCattleFactory.CreateClient();
@@ -48,7 +48,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_200_with_translated_animal_for_known_identifier()
+    public async Task Get_returns_200_with_translated_animal_for_known_identifier_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => OkJson(FullyPopulatedCattle()));
@@ -94,7 +94,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_forwards_identifier_case_unchanged_to_cattle_api()
+    public async Task Get_forwards_identifier_case_unchanged_to_cattle_api_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
@@ -108,7 +108,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_escapes_url_decoded_identifier_when_calling_cattle_api()
+    public async Task Get_escapes_url_decoded_identifier_when_calling_cattle_api_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
@@ -122,7 +122,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_sends_api_key_header_to_cattle_api_when_configured()
+    public async Task Get_sends_api_key_header_to_cattle_api_when_configured_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => OkJson(FullyPopulatedCattle()));
@@ -138,7 +138,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_200_with_null_optional_sections_for_minimal_cattle_api_response()
+    public async Task Get_returns_200_with_null_optional_sections_for_minimal_cattle_api_response_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => OkJson(new CattleDetailsResponse
@@ -168,7 +168,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_404_lis_error_for_unknown_identifier()
+    public async Task Get_returns_404_lis_error_for_unknown_identifier_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
@@ -199,7 +199,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_404_lis_error_when_cattle_api_200_body_is_null()
+    public async Task Get_returns_404_lis_error_when_cattle_api_200_body_is_null_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => RawJson("null"));
@@ -214,7 +214,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_500_lis_error_when_cattle_api_200_body_is_malformed()
+    public async Task Get_returns_500_lis_error_when_cattle_api_200_body_is_malformed_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => RawJson("{ not json"));
@@ -232,7 +232,7 @@ public class GetAnimalByIdentifierIntegrationTests
     [InlineData("\"species\":\"unknown\",\"sex\":\"Female\",\"dateRegistered\":\"2024-03-15\"")]
     [InlineData("\"species\":\"Cattle\",\"sex\":\"unknown\",\"dateRegistered\":\"2024-03-15\"")]
     [InlineData("\"species\":\"Cattle\",\"sex\":\"Female\",\"dateRegistered\":null")]
-    public async Task Get_returns_500_lis_error_when_cattle_api_required_field_is_unsupported_or_missing(
+    public async Task Get_returns_500_lis_error_when_cattle_api_required_field_is_unsupported_or_missing_real_client(
         string fields)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -256,7 +256,7 @@ public class GetAnimalByIdentifierIntegrationTests
     [InlineData(HttpStatusCode.BadGateway, HttpStatusCode.ServiceUnavailable, "Service Unavailable", "The service is currently unavailable", "section-15.6.4")]
     [InlineData(HttpStatusCode.ServiceUnavailable, HttpStatusCode.ServiceUnavailable, "Service Unavailable", "The service is currently unavailable", "section-15.6.4")]
     [InlineData(HttpStatusCode.GatewayTimeout, HttpStatusCode.ServiceUnavailable, "Service Unavailable", "The service is currently unavailable", "section-15.6.4")]
-    public async Task Get_maps_cattle_api_failure_status_to_lis_error(
+    public async Task Get_maps_cattle_api_failure_status_to_lis_error_real_client(
         HttpStatusCode upstreamStatus,
         HttpStatusCode expectedStatus,
         string expectedTitle,
@@ -275,7 +275,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_500_lis_error_when_cattle_api_is_unreachable()
+    public async Task Get_returns_500_lis_error_when_cattle_api_is_unreachable_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => throw new HttpRequestException("connection refused"));
@@ -290,7 +290,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_503_lis_error_when_cattle_api_request_times_out()
+    public async Task Get_returns_503_lis_error_when_cattle_api_request_times_out_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => throw new TaskCanceledException("timeout", new TimeoutException()));
@@ -305,7 +305,7 @@ public class GetAnimalByIdentifierIntegrationTests
     }
 
     [Fact]
-    public async Task Get_returns_500_lis_error_when_cattle_api_throws_unexpected_exception()
+    public async Task Get_returns_500_lis_error_when_cattle_api_throws_unexpected_exception_real_client()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new StubCattleApiHandler(_ => throw new InvalidOperationException("boom"));
