@@ -2,18 +2,18 @@
 
 This write-up covers the open issues, assumptions and trade-offs in the `POST /animals` change. Each section describes a concern, the reason it exists, and what it means for callers or maintainers. Each section cites the code where the behaviour is implemented. The findings come from reading the code. The endpoint has not been run against the fake client as part of this review.
 
-The flow is: validate the LIS request, create a Register an Animal registration bundle, then return the ear tag as the animal identifier.
+The flow is: validate the LIS request, create a Register an Animal registration bundle, then return the ear tag as the animal identifier. If the caller sends `LI-Request-Mode: async`, the endpoint returns `202` with a tracking reference instead (see section 9).
 
 ## Play by play: how `POST /animals` works
 
 This is the step-by-step path for a single `POST /animals` request, as implemented in the code.
 
 1. **Route and feature flag.** The route is registered in [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), lines 47–54, and is gated by the `PostAnimals` feature flag.
-2. **Request received.** The handler logs `POST /animals received` and reads the JSON body into the LIS `Animal` model. Malformed JSON, an empty body, an invalid value (such as an unsupported `sex`) or a missing required property returns LIS `400`, with the JSON path and reason in `detail` (see section 6).
+2. **Request received.** The handler logs `POST /animals received`, reads the `LI-Request-Mode` header (section 9), and reads the JSON body into the `CreateAnimalRequest` model. Malformed JSON, an empty body, an invalid value (such as an unsupported `sex`) or a missing required property returns LIS `400`, with the JSON path and reason in `detail` (see section 6).
 3. **LIS validation.** [PostAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/PostAnimalsRequestValidator.cs) `TryBuild` checks the identifier, species, sex, category, registration date, CPH format and birth date. Any failure returns LIS `400` with the validator message in `detail`, and no upstream call is made.
 4. **Translate to a bundle request.** [PostAnimalsTranslator.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/Translators/Animal/PostAnimalsTranslator.cs) `TranslateRequest` builds a `RegistrationBundleRequest`. The CPH is the first non-blank site identifier. The animal's ear tag, date of birth, lowercase sex, breed code, dam and sire are mapped across (see section 8).
 5. **Create the bundle.** `PostAnimalsService.CreateBundleAsync` calls `CreateRegistrationBundleAsync` on the Cattle API client. The client is chosen by the `PostAnimals` client mode in configuration and defaults to the fake client. A non-2xx response is logged and thrown as an `HttpRequestException`. A 2xx response is read as a `BundleResponse`. An empty body throws `InvalidOperationException`, which returns `500`.
-6. **Success.** The translator returns an `AnimalResponse` with the ear tag as `identifier` and `/animals/{ear tag}` as the self link. The endpoint returns `200`. The facade does not call Register an Animal's validate operation, so `200` means the bundle was created, not that it passed validation.
+6. **Success.** The translator returns a `CreateAnimalResult` holding the `AnimalResponse` (ear tag as `identifier`, `/animals/{ear tag}` as the self link) and the created `BundleResponse`. Sync requests get `200` with the animal. Async requests get `202` with an `AsyncAcceptedResponse` (section 9). The facade does not call Register an Animal's validate operation, so `200` means the bundle was created, not that it passed validation.
 7. **Create failures.** An `HttpRequestException` from step 5 is mapped by the endpoint. A `400` upstream becomes LIS `400`. A `502`, `503` or `504` becomes `503`. Any other status becomes `500` (see section 5).
 8. **Catch-all.** Any other exception, except cancellation, is logged and returned as `500`. Cancellation is not caught by the handler.
 
@@ -41,14 +41,16 @@ This is the step-by-step path for a single `POST /animals` request, as implement
 
 **Where:** [lis-api.json](../../LisFacadeApiBackend/lis-api.json), the `POST /animals` responses, which reference `AsyncAcceptedResponse`.
 
-**Issue:** The endpoint no longer returns `202`, despite the LIS-API documenting it as a response, as I cannot fidn an appropriate time to return it.
+**Decision:** The endpoint returns `202` with `AsyncAcceptedResponse` for `LI-Request-Mode: async`, matching the spec. The bundle is created before the response, so `202` means the bundle exists, not that Register an Animal has processed it.
+
+**Issue:** `requestStatusUrl` (`/animals/requests/{id}`) has no matching route yet. There is no status endpoint, so callers cannot poll it. The spec also says `format: uri`, but the value is a relative path.
 
 ## 5. Error mapping for the create call
 
 
 **Where:** [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), `PostAnimals`. The create call does not use `FromUpstream`, which is still used by GET.
 
-**Decision:** The endpoint returns only the status codes documented for `POST /animals` in [lis-api.json](../../LisFacadeApiBackend/lis-api.json): `200`, `400`, `500` and `503`. Upstream failures on create map as follows:
+**Decision:** The endpoint returns only the status codes documented for `POST /animals` in [lis-api.json](../../LisFacadeApiBackend/lis-api.json): `200`, `202`, `400`, `500` and `503`. Upstream failures on create map as follows:
 
 | Upstream status | LIS response |
 |-----------------|--------------|
@@ -66,7 +68,7 @@ This is the step-by-step path for a single `POST /animals` request, as implement
 
 **Where:** [PostAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/PostAnimalsRequestValidator.cs), `TryBuild`, called from the `PostAnimals` handler in [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs).
 
-**Decision:** The handler reads the body into the LIS `Animal` model. `TryBuild` then runs these checks in order and stops at the first failure:
+**Decision:** The handler reads the body into the `CreateAnimalRequest` model. `TryBuild` then runs these checks in order and stops at the first failure:
 
 1. `animal.identifier` is not blank.
 2. `animal.species` is `cattle`.
@@ -108,13 +110,35 @@ A failed check returns LIS `400` with its message in `detail`, and no upstream c
 - The dam split matches the GET mapping's split.
 - The sire fallback to `importParents` is a choice. It is not in the mapping document.
 
+## 9. Request mode: sync and async
+
+**Where:** [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), `PostAnimals` and `TryParseRequestMode`. The `CreateAnimalResult` record and bundle return are in [PostAnimalsTranslator.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/Translators/Animal/PostAnimalsTranslator.cs). The response body is [AsyncAcceptedResponse.cs](../../LisFacadeApiBackend/Facade/Models/LIS/Response/AsyncAcceptedResponse.cs).
+
+**Decision:** The `LI-Request-Mode` header selects the response:
+
+| Header value | Behaviour | Response |
+|--------------|-----------|----------|
+| Missing, blank or `sync` (any case) | Bundle is created, then the animal is returned | `200` with `AnimalResponse` |
+| `async` (any case) | Bundle is created, then a tracking reference is returned | `202` with `Location` and `AsyncAcceptedResponse` |
+| Any other value | Rejected before the body is read | `400` |
+
+For `202`, the bundle's `id` is the tracking reference. The body contains `id`, `requestStatus` (always `Pending`), `requestDate` (the bundle's `createdAt`) and `requestStatusUrl`. Both the `Location` header and `requestStatusUrl` use `/animals/requests/{id}`.
+
+**Assumptions:**
+
+- Processing is synchronous. The `202` is sent after the bundle is created, not while Register an Animal processes it. Validation and upstream errors still return `400`, `500` or `503` synchronously.
+- The bundle id is the LIS request id. The mapping document does not confirm this (see [post-cattle-registration-bundle.md](../schema-mappings/endpoints/post-cattle-registration-bundle.md), around line 213).
+- `requestStatus` is `Pending` because the facade does not check registration progress at this point.
+- The original endpoint would've relied on the Register an Animal validate endpoint for the 202 response, however as that has been removed, I do not see another way to map this, resulting in the decision to return it as we are to mirror the LIS-API without it working properly
+
+
 ## Summary
 
 | # | Area | Risk | Action needed |
 |---|------|------|---------------|
 | 1 | Real client not implemented | `500` if mode is switched to `real` | Implement before going live |
 | 2 | 200 does not confirm validity | Register an Animal's validation is no longer called, so invalid bundles are reported as success | Agree whether this is acceptable; revisit if LIS needs validation feedback |
-| 3 | `lis-api.json` still documents 202 | Contract shows a response the endpoint no longer returns | Update `lis-api.json` once the change is agreed |
+| 3 | `202` tracking URL has no route | `requestStatusUrl` cannot be polled; the spec says `format: uri` but the value is relative | Add a status endpoint, or change the URL and spec |
 | 4 | Create error mapping | Only spec codes (`400`, `500`, `503`) are returned | Confirm `401`/`403`/`404` → `500` with LIS |
 | 5 | Validation checks and error reporting | Validator returns the first failure only; missing JSON fields are reported by the JSON reader with the JSON path; `registration.date` and `category` not sent | Make the model fields nullable (wider change in future ticket); map `date` and `category` |
 | 6 | CPH format | Validated as `county/parish/holding`, same as GET | Confirm the format with LIS |

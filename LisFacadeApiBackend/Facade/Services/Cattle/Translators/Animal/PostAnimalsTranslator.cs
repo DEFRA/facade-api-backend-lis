@@ -1,17 +1,20 @@
 using LisFacadeApiBackend.Facade.Cattle.Request;
 using LisFacadeApiBackend.Facade.Cattle.Response.Cattle;
+using LisFacadeApiBackend.Facade.Cattle.Response.Bundle;
+using LisFacadeApiBackend.Facade.LIS.Request;
 using LisFacadeApiBackend.Facade.LIS.Response;
 using LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
-using AnimalModel = LisFacadeApiBackend.Facade.LIS.Animal.Animal;
 
 namespace LisFacadeApiBackend.Facade.Services.Cattle.Translators.Animal;
+
+public sealed record CreateAnimalResult(AnimalResponse Animal, BundleResponse Bundle);
 
 public class PostAnimalsTranslator(
     PostAnimalsService animalsService,
     ILogger<PostAnimalsTranslator> logger)
-    : ITranslator<AnimalModel, AnimalResponse?>
+    : ITranslator<CreateAnimalRequest, CreateAnimalResult>
 {
-    public async Task<AnimalResponse?> Translate(AnimalModel inboundRequest, CancellationToken cancellationToken)
+    public async Task<CreateAnimalResult> Translate(CreateAnimalRequest inboundRequest, CancellationToken cancellationToken)
     {
         var bundleRequest = TranslateRequest(inboundRequest);
         var earTag = inboundRequest.AnimalDetails.Identifier;
@@ -19,14 +22,15 @@ public class PostAnimalsTranslator(
         var bundle = await animalsService.CreateBundleAsync(bundleRequest, cancellationToken);
         logger.LogInformation("Created registration bundle {BundleId} for {EarTag}", bundle.Id, earTag);
 
-        return new AnimalResponse
+        var animal = new AnimalResponse
         {
             Identifier = earTag,
             Links = new AnimalLinks { Self = $"/animals/{Uri.EscapeDataString(earTag)}" }
         };
+        return new CreateAnimalResult(animal, bundle);
     }
 
-    public RegistrationBundleRequest TranslateRequest(AnimalModel animal)
+    public RegistrationBundleRequest TranslateRequest(CreateAnimalRequest animal)
     {
         var registration = animal.Registration;
         var cph = registration.Site.Identifiers
@@ -51,10 +55,10 @@ public class PostAnimalsTranslator(
         };
     }
 
-    private static DamRegistrationRequest? ToDam(AnimalModel animal)
+    private static DamRegistrationRequest? ToDam(CreateAnimalRequest animal)
     {
-        var surrogateDam = animal.ImportParents?.BirthDam?.Identifier;
-        var geneticDam = animal.Registration.GeneticDam?.Identifier;
+        var surrogateDam = animal.ImportParents?.BirthDam?.Identifier ?? animal.Registration.BirthDam?.Identifier;
+        var geneticDam = animal.Registration.GeneticDam?.Identifier ?? animal.ImportParents?.GeneticDam?.Identifier;
 
         return surrogateDam is null && geneticDam is null
             ? null
@@ -65,7 +69,7 @@ public class PostAnimalsTranslator(
             };
     }
 
-    private static SireRegistrationRequest? ToSire(AnimalModel animal)
+    private static SireRegistrationRequest? ToSire(CreateAnimalRequest animal)
     {
         var sire = animal.Registration.Sire?.Identifier ?? animal.ImportParents?.Sire?.Identifier;
 

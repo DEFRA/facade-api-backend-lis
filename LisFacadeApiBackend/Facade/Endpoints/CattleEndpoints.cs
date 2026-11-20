@@ -20,6 +20,8 @@ namespace LisFacadeApiBackend.Facade.Endpoints;
 [ExcludeFromCodeCoverage]
 public static class CattleEndpoints
 {
+    private const string RequestModeHeader = "LI-Request-Mode";
+
     public static RouteGroupBuilder MapCattleEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/animals")
@@ -48,10 +50,11 @@ public static class CattleEndpoints
         group.MapPost("/", PostAnimals)
             .WithName("PostAnimals")
             .Produces<AnimalResponse>(StatusCodes.Status200OK)
+            .Produces<AsyncAcceptedResponse>(StatusCodes.Status202Accepted)
             .Produces<LisErrors>(StatusCodes.Status400BadRequest)
             .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
             .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
-            .Accepts<Animal>("application/json")
+            .Accepts<CreateAnimalRequest>("application/json")
             .RequireFeatureFlag(FeatureFlagNames.PostAnimals);
             
         return group;
@@ -171,16 +174,22 @@ public static class CattleEndpoints
 
     private static async Task<IResult> PostAnimals(
         HttpRequest httpRequest,
-        [FromServices] ITranslator<Animal, AnimalResponse?> translator,
+        [FromServices] ITranslator<CreateAnimalRequest, CreateAnimalResult> translator,
         ILogger<EndpointLogCategory> logger,
         CancellationToken cancellationToken)
     {
         logger.LogInformation("POST /animals received");
 
-        Animal? animal;
+        if (!TryParseRequestMode(httpRequest, out var isAsync))
+        {
+            logger.LogWarning("Invalid {Header} header", RequestModeHeader);
+            return LisErrorResults.BadRequest($"The {RequestModeHeader} header must be 'sync' or 'async'");
+        }
+
+        CreateAnimalRequest? animal;
         try
         {
-            animal = await httpRequest.ReadFromJsonAsync<Animal>(cancellationToken);
+            animal = await httpRequest.ReadFromJsonAsync<CreateAnimalRequest>(cancellationToken);
         }
         catch (JsonException ex)
         {
@@ -200,7 +209,7 @@ public static class CattleEndpoints
             return LisErrorResults.BadRequest(error);
         }
 
-        AnimalResponse? result;
+        CreateAnimalResult result;
         try
         {
             result = await translator.Translate(request, cancellationToken);
@@ -224,7 +233,46 @@ public static class CattleEndpoints
         }
 
         logger.LogInformation("Registered animal {Identifier}", request.AnimalDetails.Identifier);
-        return TypedResults.Ok(result);
+
+        if (!isAsync)
+        {
+            return TypedResults.Ok(result.Animal);
+        }
+
+        var bundleId = result.Bundle.Id;
+        logger.LogInformation("Accepted async registration bundle {BundleId}", bundleId);
+        return TypedResults.Accepted(
+            $"/animals/requests/{bundleId}",
+            new AsyncAcceptedResponse
+            {
+                Id = bundleId,
+                RequestStatus = AsyncRequestStatus.Pending,
+                RequestDate = result.Bundle.CreatedAt,
+                RequestStatusUrl = $"/animals/requests/{bundleId}"
+            });
+    }
+
+    private static bool TryParseRequestMode(HttpRequest httpRequest, out bool isAsync)
+    {
+        isAsync = false;
+        if (!httpRequest.Headers.TryGetValue(RequestModeHeader, out var values))
+        {
+            return true;
+        }
+
+        var mode = values.ToString();
+        if (string.IsNullOrWhiteSpace(mode) || mode.Equals("sync", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (mode.Equals("async", StringComparison.OrdinalIgnoreCase))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        return false;
     }
 
     private static string DescribeJsonError(JsonException ex)

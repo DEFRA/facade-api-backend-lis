@@ -23,7 +23,7 @@ public static class FacadeServiceCollectionExtensions
     {
         services.AddTransient<ITranslator<string, Animal?>, GetAnimalByIdentifierTranslator>();
         services.AddTransient<ITranslator<GetAnimalsRequest, GetAnimalsResponse?>, GetAnimalsTranslator>();
-        services.AddTransient<ITranslator<Animal, AnimalResponse?>, PostAnimalsTranslator>();
+        services.AddTransient<ITranslator<CreateAnimalRequest, CreateAnimalResult>, PostAnimalsTranslator>();
 
         return services;
     }

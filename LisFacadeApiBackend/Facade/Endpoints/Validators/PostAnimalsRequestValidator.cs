@@ -1,18 +1,48 @@
 using System.Diagnostics.CodeAnalysis;
-using LisFacadeApiBackend.Facade.LIS.Animal;
 using LisFacadeApiBackend.Facade.LIS.Enums;
+using LisFacadeApiBackend.Facade.LIS.Request;
 
 namespace LisFacadeApiBackend.Facade.Endpoints.Validators;
 
 public static class PostAnimalsRequestValidator
 {
     public static bool TryBuild(
-        Animal animal,
-        [NotNullWhen(true)] out Animal? request,
+        CreateAnimalRequest animal,
+        [NotNullWhen(true)] out CreateAnimalRequest? request,
         [NotNullWhen(false)] out string? error)
     {
         request = null;
         error = null;
+
+        if (animal.AnimalDetails is null)
+        {
+            error = "animal is required";
+            return false;
+        }
+
+        if (animal.Registration is null)
+        {
+            error = "registration is required";
+            return false;
+        }
+
+        if (animal.Registration.Site is null)
+        {
+            error = "registration.site is required";
+            return false;
+        }
+
+        if (animal.Registration.Site.Identifiers is null)
+        {
+            error = "registration.site.identifiers is required";
+            return false;
+        }
+
+        if (animal.Registration.Site.Identifiers.Any(i => i is null))
+        {
+            error = "registration.site.identifiers must not contain null entries";
+            return false;
+        }
 
         if (string.IsNullOrWhiteSpace(animal.AnimalDetails.Identifier))
         {
@@ -58,7 +88,6 @@ public static class PostAnimalsRequestValidator
             return false;
         }
 
-        // UTC+14 is the furthest ahead of UTC, so a birth date up to one UTC day ahead can still be today locally.
         if (animal.Birth?.Date is { } birthDate && birthDate > DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1))
         {
             error = "birth.date cannot be in the future";
