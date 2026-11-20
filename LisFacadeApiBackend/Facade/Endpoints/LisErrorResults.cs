@@ -5,15 +5,22 @@ namespace LisFacadeApiBackend.Facade.Endpoints;
 
 public static class LisErrorResults
 {
-    public static IResult NotFound() => Create(
-        StatusCodes.Status404NotFound, "Not found",
-        "The requested resource was not found",
-        "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5");
+    public static IResult BadRequest() => BadRequest("The request was invalid");
+
+    public static IResult BadRequest(string detail) => Create(
+        StatusCodes.Status400BadRequest, "Bad Request",
+        detail,
+        "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.1");
 
     public static IResult Forbidden() => Create(
         StatusCodes.Status403Forbidden, "Forbidden",
         "The resource could not be returned as the requestor is not authorized",
         "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.4");
+        
+    public static IResult NotFound() => Create(
+        StatusCodes.Status404NotFound, "Not found",
+        "The requested resource was not found",
+        "https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5");
 
     public static IResult ServerError() => Create(
         StatusCodes.Status500InternalServerError, "Server Error",

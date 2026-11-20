@@ -23,6 +23,7 @@ public static class FacadeServiceCollectionExtensions
     {
         services.AddTransient<ITranslator<string, Animal?>, GetAnimalByIdentifierTranslator>();
         services.AddTransient<ITranslator<GetAnimalsRequest, GetAnimalsResponse?>, GetAnimalsTranslator>();
+        services.AddTransient<ITranslator<Animal, AnimalResponse?>, PostAnimalsTranslator>();
 
         return services;
     }
@@ -33,6 +34,8 @@ public static class FacadeServiceCollectionExtensions
             sp, sp.ResolveCattleApiClient(FeatureFlagNames.GetAnimalByIdentifier)));
         services.AddTransient(sp => ActivatorUtilities.CreateInstance<GetAnimalsService>(
             sp, sp.ResolveCattleApiClient(FeatureFlagNames.GetAnimals)));
+        services.AddTransient(sp => ActivatorUtilities.CreateInstance<PostAnimalsService>(
+            sp, sp.ResolveCattleApiClient(FeatureFlagNames.PostAnimals)));
 
         return services;
     }

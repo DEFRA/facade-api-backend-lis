@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
@@ -6,10 +8,12 @@ using Microsoft.OpenApi;
 using LisFacadeApiBackend.Facade.Endpoints.Validators;
 using LisFacadeApiBackend.Facade.FeatureFlags;
 using LisFacadeApiBackend.Facade.LIS.Animal;
+using LisFacadeApiBackend.Facade.LIS.Enums;
 using LisFacadeApiBackend.Facade.LIS.Error;
 using LisFacadeApiBackend.Facade.LIS.Request;
 using LisFacadeApiBackend.Facade.LIS.Response;
 using LisFacadeApiBackend.Facade.Services.Cattle.Translators;
+using LisFacadeApiBackend.Facade.Services.Cattle.Translators.Animal;
 
 namespace LisFacadeApiBackend.Facade.Endpoints;
 
@@ -41,6 +45,15 @@ public static class CattleEndpoints
             .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
             .RequireFeatureFlag(FeatureFlagNames.GetAnimalByIdentifier);
 
+        group.MapPost("/", PostAnimals)
+            .WithName("PostAnimals")
+            .Produces<AnimalResponse>(StatusCodes.Status200OK)
+            .Produces<LisErrors>(StatusCodes.Status400BadRequest)
+            .Produces<LisErrors>(StatusCodes.Status500InternalServerError)
+            .Produces<LisErrors>(StatusCodes.Status503ServiceUnavailable)
+            .Accepts<Animal>("application/json")
+            .RequireFeatureFlag(FeatureFlagNames.PostAnimals);
+            
         return group;
     }
 
@@ -154,5 +167,71 @@ public static class CattleEndpoints
 
         logger.LogInformation("Returning animal with identifier {Identifier}", identifier);
         return TypedResults.Ok(result);
+    }
+
+    private static async Task<IResult> PostAnimals(
+        HttpRequest httpRequest,
+        [FromServices] ITranslator<Animal, AnimalResponse?> translator,
+        ILogger<EndpointLogCategory> logger,
+        CancellationToken cancellationToken)
+    {
+        logger.LogInformation("POST /animals received");
+
+        Animal? animal;
+        try
+        {
+            animal = await httpRequest.ReadFromJsonAsync<Animal>(cancellationToken);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Invalid POST /animals body");
+            return LisErrorResults.BadRequest(DescribeJsonError(ex));
+        }
+
+        if (animal is null)
+        {
+            logger.LogWarning("POST /animals body was empty");
+            return LisErrorResults.BadRequest("The request body must be an animal");
+        }
+
+        if (!PostAnimalsRequestValidator.TryBuild(animal, out var request, out var error))
+        {
+            logger.LogWarning("Invalid POST /animals request: {Error}", error);
+            return LisErrorResults.BadRequest(error);
+        }
+
+        AnimalResponse? result;
+        try
+        {
+            result = await translator.Translate(request, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            logger.LogWarning(ex, "Register an Animal rejected animal {Identifier}", request.AnimalDetails.Identifier);
+            return LisErrorResults.BadRequest();
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Upstream failure for animal {Identifier}", request.AnimalDetails.Identifier);
+            return ex.StatusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout
+                ? LisErrorResults.ServiceUnavailable()
+                : LisErrorResults.ServerError();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Unexpected error for animal {Identifier}", request.AnimalDetails.Identifier);
+            return LisErrorResults.ServerError();
+        }
+
+        logger.LogInformation("Registered animal {Identifier}", request.AnimalDetails.Identifier);
+        return TypedResults.Ok(result);
+    }
+
+    private static string DescribeJsonError(JsonException ex)
+    {
+        var reason = ex.Message.Split(" Path:")[0].TrimEnd('.');
+        return ex.Path is null
+            ? $"The request body is invalid: {reason}."
+            : $"The request body is invalid at {ex.Path}: {reason}.";
     }
 }

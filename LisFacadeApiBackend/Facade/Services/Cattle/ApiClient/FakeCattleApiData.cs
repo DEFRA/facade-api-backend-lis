@@ -504,21 +504,6 @@ public static class FakeCattleApiData
         };
     }
 
-    public static SubmissionValidationResult CreateValidationResult(BundleResponse bundle) =>
-        new()
-        {
-            SubmissionId = bundle.Id,
-            IsValid = true,
-            Status = "Valid",
-            ErrorCount = 0,
-            AnimalResults = [.. bundle.Animals.Select(a => new SubmissionAnimalValidationResult
-            {
-                AnimalId = a.Id,
-                EarTag = a.EarTag,
-                IsValid = true
-            })]
-        };
-
     public static IReadOnlyDictionary<string, UserDetailsResponse> GetUsersBySubject() =>
         new Dictionary<string, UserDetailsResponse>(StringComparer.OrdinalIgnoreCase)
         {
