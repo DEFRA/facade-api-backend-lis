@@ -61,10 +61,6 @@ public sealed class CattleApiClient(HttpClient httpClient, ILogger<CattleApiClie
         RegistrationBundleRequest request, CancellationToken cancellationToken) =>
         throw new NotImplementedException();
 
-    public Task<HttpResponseMessage> ValidateRegistrationBundleAsync(
-        string id, CancellationToken cancellationToken) =>
-        throw new NotImplementedException();
-
     public Task<HttpResponseMessage> GetUserDetailsAsync(
         string subject, CancellationToken cancellationToken) =>
         throw new NotImplementedException();

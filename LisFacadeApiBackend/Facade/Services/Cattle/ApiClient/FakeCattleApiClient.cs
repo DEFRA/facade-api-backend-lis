@@ -189,13 +189,11 @@ public sealed class FakeCattleApiClient : ICattleApiClient
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (request is null
-            || string.IsNullOrWhiteSpace(request.ClientReference)
-            || string.IsNullOrWhiteSpace(request.Holding?.Cph))
+        if (request is null || string.IsNullOrWhiteSpace(request.Holding?.Cph))
         {
             return Task.FromResult(CreateResponse(
                 HttpStatusCode.BadRequest,
-                FakeCattleApiData.BadRequestProblemDetails("ClientReference and Holding.Cph are required.", "/v1/registrations"),
+                FakeCattleApiData.BadRequestProblemDetails("Holding.Cph is required.", "/v1/registrations"),
                 ProblemMediaType));
         }
 
@@ -208,29 +206,6 @@ public sealed class FakeCattleApiClient : ICattleApiClient
         _bundles[bundle.Id] = bundle;
 
         return Task.FromResult(CreateResponse(HttpStatusCode.Created, bundle, JsonMediaType));
-    }
-
-    public Task<HttpResponseMessage> ValidateRegistrationBundleAsync(
-        string id,
-        CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!Guid.TryParse(id, out var submissionId)
-            || !_bundles.TryGetValue(submissionId, out var bundle))
-        {
-            return Task.FromResult(CreateResponse(
-                HttpStatusCode.NotFound,
-                FakeCattleApiData.NotFoundProblemDetails(
-                    "Registration bundle with the specified id was not found.",
-                    "/v1/registrations/{id}/validate"),
-                ProblemMediaType));
-        }
-
-        return Task.FromResult(CreateResponse(
-            HttpStatusCode.OK,
-            FakeCattleApiData.CreateValidationResult(bundle),
-            JsonMediaType));
     }
 
     public Task<HttpResponseMessage> GetUserDetailsAsync(
