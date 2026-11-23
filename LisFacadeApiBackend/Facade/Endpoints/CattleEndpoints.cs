@@ -203,6 +203,11 @@ public static class CattleEndpoints
             logger.LogWarning(ex, "Invalid POST /animals body");
             return LisErrorResults.BadRequest(DescribeJsonError(ex));
         }
+        catch (InvalidOperationException ex) when (ex.InnerException is ArgumentException)
+        {
+            logger.LogWarning(ex, "Unsupported charset in POST /animals Content-Type");
+            return LisErrorResults.BadRequest("The request Content-Type charset is not supported");
+        }
 
         if (animal is null)
         {
