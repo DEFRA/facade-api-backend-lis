@@ -1,6 +1,7 @@
 using LisFacadeApiBackend.Facade.Cattle.Request;
 using LisFacadeApiBackend.Facade.Cattle.Response.Cattle;
 using LisFacadeApiBackend.Facade.Cattle.Response.Bundle;
+using LisFacadeApiBackend.Facade.Endpoints.Validators;
 using LisFacadeApiBackend.Facade.LIS.Request;
 using LisFacadeApiBackend.Facade.LIS.Response;
 using LisFacadeApiBackend.Facade.Services.Cattle.EndpointServices;
@@ -33,9 +34,10 @@ public class PostAnimalsTranslator(
     public RegistrationBundleRequest TranslateRequest(CreateAnimalRequest animal)
     {
         var registration = animal.Registration;
-        var cph = registration.Site.Identifiers
-            .First(i => !string.IsNullOrWhiteSpace(i.Identifier))
-            .Identifier;
+        if (!CphIdentifierSelector.TrySelect(registration.Site.Identifiers.Select(i => i.Identifier), out var cph, out var error))
+        {
+            throw new InvalidOperationException(error);
+        }
 
         return new RegistrationBundleRequest
         {

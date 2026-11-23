@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi;
 using LisFacadeApiBackend.Facade.Endpoints.Validators;
 using LisFacadeApiBackend.Facade.FeatureFlags;
@@ -186,6 +187,12 @@ public static class CattleEndpoints
             return LisErrorResults.BadRequest($"The {RequestModeHeader} header must be 'sync' or 'async'");
         }
 
+        if (!HasJsonContentType(httpRequest))
+        {
+            logger.LogWarning("POST /animals received without a JSON Content-Type");
+            return LisErrorResults.BadRequest("The request Content-Type must be application/json");
+        }
+
         CreateAnimalRequest? animal;
         try
         {
@@ -274,6 +281,11 @@ public static class CattleEndpoints
 
         return false;
     }
+
+    private static bool HasJsonContentType(HttpRequest httpRequest) =>
+        MediaTypeHeaderValue.TryParse(httpRequest.ContentType, out var mediaType)
+        && (mediaType.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase)
+            || mediaType.MediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase));
 
     private static string DescribeJsonError(JsonException ex)
     {

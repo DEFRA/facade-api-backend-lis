@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using LisFacadeApiBackend.Facade.LIS.Animal;
 using LisFacadeApiBackend.Facade.LIS.Enums;
 using LisFacadeApiBackend.Facade.LIS.Request;
 
@@ -26,21 +27,8 @@ public static class PostAnimalsRequestValidator
             return false;
         }
 
-        if (animal.Registration.Site is null)
+        if (!TryValidateSite(animal.Registration.Site, "registration.site", out error))
         {
-            error = "registration.site is required";
-            return false;
-        }
-
-        if (animal.Registration.Site.Identifiers is null)
-        {
-            error = "registration.site.identifiers is required";
-            return false;
-        }
-
-        if (animal.Registration.Site.Identifiers.Any(i => i is null))
-        {
-            error = "registration.site.identifiers must not contain null entries";
             return false;
         }
 
@@ -74,17 +62,13 @@ public static class PostAnimalsRequestValidator
             return false;
         }
 
-        var cph = animal.Registration.Site.Identifiers.FirstOrDefault(i => !string.IsNullOrWhiteSpace(i.Identifier))?.Identifier;
-        if (cph is null)
+        if (!CphIdentifierSelector.TrySelect(animal.Registration.Site.Identifiers.Select(i => i.Identifier), out _, out error))
         {
-            error = "registration.site identifier is required";
             return false;
         }
 
-        var segments = cph.Split('/');
-        if (segments.Length != 3 || segments.Any(s => string.IsNullOrWhiteSpace(s) || s is "." or ".."))
+        if (animal.Birth is not null && !TryValidateSite(animal.Birth.Site, "birth.site", out error))
         {
-            error = "registration.site identifier must be in county/parish/holding format";
             return false;
         }
 
@@ -94,7 +78,57 @@ public static class PostAnimalsRequestValidator
             return false;
         }
 
+        var parents = new (string Path, ParentAnimal? Parent)[]
+        {
+            ("registration.birthDam", animal.Registration.BirthDam),
+            ("registration.geneticDam", animal.Registration.GeneticDam),
+            ("registration.sire", animal.Registration.Sire),
+            ("importParents.birthDam", animal.ImportParents?.BirthDam),
+            ("importParents.geneticDam", animal.ImportParents?.GeneticDam),
+            ("importParents.sire", animal.ImportParents?.Sire)
+        };
+
+        foreach (var (path, parent) in parents)
+        {
+            if (parent is not null && parent.Identifier is null)
+            {
+                error = $"{path}.identifier is required";
+                return false;
+            }
+        }
+
         request = animal;
+        return true;
+    }
+
+    private static bool TryValidateSite(CreateSiteRequest? site, string path, [NotNullWhen(false)] out string? error)
+    {
+        error = null;
+
+        if (site is null)
+        {
+            error = $"{path} is required";
+            return false;
+        }
+
+        if (site.Identifiers is null)
+        {
+            error = $"{path}.identifiers is required";
+            return false;
+        }
+
+        if (site.Identifiers.Any(i => i is null))
+        {
+            error = $"{path}.identifiers must not contain null entries";
+            return false;
+        }
+
+        if (site.Identifiers.Any(i => i.Identifier is null))
+        {
+            error = $"{path}.identifiers must not contain null identifiers";
+            return false;
+        }
+
         return true;
     }
 }
