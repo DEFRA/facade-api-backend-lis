@@ -11,7 +11,7 @@ This is the step-by-step path for a single `POST /animals` request, as implement
 1. **Route and feature flag.** The route is registered in [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), lines 47–54, and is gated by the `PostAnimals` feature flag.
 2. **Request received.** The handler logs `POST /animals received`, reads the `LI-Request-Mode` header (section 9), and reads the JSON body into the `CreateAnimalRequest` model. Malformed JSON, an empty body, an invalid value (such as an unsupported `sex`) or a missing required property returns LIS `400`, with the JSON path and reason in `detail` (see section 6).
 3. **LIS validation.** [PostAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/PostAnimalsRequestValidator.cs) `TryBuild` checks the identifier, species, sex, category, registration date, CPH format and birth date. Any failure returns LIS `400` with the validator message in `detail`, and no upstream call is made.
-4. **Translate to a bundle request.** [PostAnimalsTranslator.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/Translators/Animal/PostAnimalsTranslator.cs) `TranslateRequest` builds a `RegistrationBundleRequest`. The CPH is the first non-blank site identifier. The animal's ear tag, date of birth, lowercase sex, breed code, dam and sire are mapped across (see section 8).
+4. **Translate to a bundle request.** [PostAnimalsTranslator.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/Translators/Animal/PostAnimalsTranslator.cs) `TranslateRequest` builds a `RegistrationBundleRequest`. The CPH is the single distinct `county/parish/holding` identifier selected by the same rule as the validator (see section 7). The animal's ear tag, date of birth, lowercase sex, breed code, dam and sire are mapped across (see section 8).
 5. **Create the bundle.** `PostAnimalsService.CreateBundleAsync` calls `CreateRegistrationBundleAsync` on the Cattle API client. The client is chosen by the `PostAnimals` client mode in configuration and defaults to the fake client. A non-2xx response is logged and thrown as an `HttpRequestException`. A 2xx response is read as a `BundleResponse`. An empty body throws `InvalidOperationException`, which returns `500`.
 6. **Success.** The translator returns a `CreateAnimalResult` holding the `AnimalResponse` (ear tag as `identifier`, `/animals/{ear tag}` as the self link) and the created `BundleResponse`. Sync requests get `200` with the animal. Async requests get `202` with an `AsyncAcceptedResponse` (section 9). The facade does not call Register an Animal's validate operation, so `200` means the bundle was created, not that it passed validation.
 7. **Create failures.** An `HttpRequestException` from step 5 is mapped by the endpoint. A `400` upstream becomes LIS `400`. A `502`, `503` or `504` becomes `503`. Any other status becomes `500` (see section 5).
@@ -50,7 +50,7 @@ This is the step-by-step path for a single `POST /animals` request, as implement
 
 **Where:** [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs), `PostAnimals`. The create call does not use `FromUpstream`, which is still used by GET.
 
-**Decision:** The endpoint returns only the status codes documented for `POST /animals` in [lis-api.json](../../LisFacadeApiBackend/lis-api.json): `200`, `202`, `400`, `500` and `503`. Upstream failures on create map as follows:
+**Decision:** The handler returns only the status codes documented for `POST /animals` in [lis-api.json](../../LisFacadeApiBackend/lis-api.json): `200`, `202`, `400`, `500` and `503`. The route also returns `415` before the handler runs, when the request content type is not `application/json`, because of `.Accepts<CreateAnimalRequest>("application/json")` in [CattleEndpoints.cs](../../LisFacadeApiBackend/Facade/Endpoints/CattleEndpoints.cs). `415` is not one of the LIS responses above, and no upstream call is made. See `Post_returns_415_without_calling_upstream_when_content_type_is_not_json` in [PostAnimalsIntegrationTests.cs](../../LisFacadeApiBackend.Test/Facade/Services/Cattle/IntegrationTests/PostAnimals/PostAnimalsIntegrationTests.cs). Upstream failures on create map as follows:
 
 | Upstream status | LIS response |
 |-----------------|--------------|
@@ -75,7 +75,7 @@ This is the step-by-step path for a single `POST /animals` request, as implement
 3. `animal.sex` is a defined value. `Enum.IsDefined` catches numeric values that the JSON reader accepts.
 4. `registration.category` is a defined value, checked the same way.
 5. `registration.date` is set. A value equal to `default(DateOnly)` is rejected.
-6. The first non-blank `registration.site` identifier is in `county/parish/holding` format (see section 8).
+6. `registration.site` contains exactly one distinct identifier in `county/parish/holding` format (see section 7). Zero or multiple distinct matches are rejected, regardless of their order.
 7. `birth.date`, when present, is no more than one UTC day ahead of the current UTC date. UTC+14 is the furthest ahead of UTC, so a birth date that is today locally can be one day ahead in UTC.
 
 A failed check returns LIS `400` with its message in `detail`, and no upstream call is made. Only one message is returned per request.
@@ -91,7 +91,7 @@ A failed check returns LIS `400` with its message in `detail`, and no upstream c
 
 **Where:** [PostAnimalsRequestValidator.cs](../../LisFacadeApiBackend/Facade/Endpoints/Validators/PostAnimalsRequestValidator.cs), `TryBuild`. The translator sends the same identifier, [PostAnimalsTranslator.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/Translators/Animal/PostAnimalsTranslator.cs), `TranslateRequest`.
 
-**Decision:** The first non-blank `registration.site` identifier must split on `/` into exactly three non-blank segments, and none of them may be `.` or `..`. This is the same rule as [GetAnimalsService.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/EndpointServices/Animal/GetAnimalsService.cs), line 15. Anything else returns LIS `400`.
+**Decision:** An identifier is in CPH format when it splits on `/` into exactly three non-blank segments, and none of them is `.` or `..`. This is the same rule as [GetAnimalsService.cs](../../LisFacadeApiBackend/Facade/Services/Cattle/EndpointServices/Animal/GetAnimalsService.cs), line 15. Selection does not depend on order: non-matching identifiers are ignored, and repeated copies of the same CPH count as one. `registration.site` must contain exactly one distinct CPH-format identifier. Zero matches, or more than one distinct match, returns LIS `400`. The translator uses the same selection, so it sends the CPH that the validator accepted.
 
 **Assumption:** The POST CPH uses the same `county/parish/holding` format as GET. The evaluation summary says hyphen- and slash-separated values "must not be assumed to be interchangeable", so this should be confirmed with LIS.
 
@@ -103,7 +103,7 @@ A failed check returns LIS `400` with its message in `detail`, and no upstream c
 
 - Dam: the genetic dam comes from `registration.geneticDam`, and the surrogate (birth) dam from `importParents.birthDam`. A dam object is sent when either is present.
 - Sire: `registration.sire` is used, falling back to `importParents.sire`.
-- Breed: only `breed.code` is sent. A breed with no code is sent as `null`. The name is not used, because Register an Animal's breed is a 4-character code.
+- Breed: only `breed.code` is sent. A breed with no code is sent as `null`. The name is not used, because `breed.name` is marked `readOnly` in [lis-api.json](../../LisFacadeApiBackend/lis-api.json) (lines 2720–2724), so it is not a value the caller sets.
 
 **Assumptions:**
 
