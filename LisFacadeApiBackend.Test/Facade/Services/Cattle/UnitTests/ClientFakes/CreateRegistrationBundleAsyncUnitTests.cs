@@ -54,23 +54,6 @@ public class CreateRegistrationBundleAsyncUnitTests
     }
 
     [Fact]
-    public async Task Created_bundle_can_subsequently_be_validated()
-    {
-        var client = new FakeCattleApiClient();
-        var request = new RegistrationBundleRequest
-        {
-            ClientReference = "REF-1",
-            Holding = new HoldingRequest { Cph = "12/345/6789" }
-        };
-
-        using var createResponse = await client.CreateRegistrationBundleAsync(request, CancellationToken.None);
-        var bundle = await createResponse.Content.ReadFromJsonAsync<BundleResponse>(cancellationToken: TestContext.Current.CancellationToken);
-        using var validateResponse = await client.ValidateRegistrationBundleAsync(bundle!.Id.ToString(), CancellationToken.None);
-
-        Assert.Equal(HttpStatusCode.OK, validateResponse.StatusCode);
-    }
-
-    [Fact]
     public async Task Returns_bad_request_for_null_request()
     {
         var client = new FakeCattleApiClient();
@@ -84,17 +67,15 @@ public class CreateRegistrationBundleAsyncUnitTests
     }
 
     [Theory]
-    [InlineData("", "12/345/6789")]
-    [InlineData(" ", "12/345/6789")]
-    [InlineData("REF-1", "")]
-    [InlineData("REF-1", " ")]
-    [InlineData("REF-1", null)]
-    public async Task Returns_bad_request_when_client_reference_or_cph_missing(string clientReference, string? cph)
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    public async Task Returns_bad_request_when_cph_missing(string? cph)
     {
         var client = new FakeCattleApiClient();
         var request = new RegistrationBundleRequest
         {
-            ClientReference = clientReference,
+            ClientReference = "REF-1",
             Holding = cph is null ? null : new HoldingRequest { Cph = cph }
         };
 
@@ -102,6 +83,21 @@ public class CreateRegistrationBundleAsyncUnitTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task Creates_bundle_when_client_reference_is_blank()
+    {
+        var client = new FakeCattleApiClient();
+        var request = new RegistrationBundleRequest
+        {
+            ClientReference = string.Empty,
+            Holding = new HoldingRequest { Cph = "12/345/6789" }
+        };
+
+        using var response = await client.CreateRegistrationBundleAsync(request, CancellationToken.None);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]

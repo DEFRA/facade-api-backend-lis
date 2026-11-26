@@ -52,10 +52,6 @@ public interface ICattleApiClient
         RegistrationBundleRequest request,
         CancellationToken cancellationToken);
 
-    Task<HttpResponseMessage> ValidateRegistrationBundleAsync(
-        string id,
-        CancellationToken cancellationToken);
-
     Task<HttpResponseMessage> GetUserDetailsAsync(
         string subject,
         CancellationToken cancellationToken);
